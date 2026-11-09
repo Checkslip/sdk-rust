@@ -4,6 +4,23 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0](https://github.com/Checkslip/sdk-rust/compare/v0.1.0...v0.2.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **usage:** free_no_credit and free_hold_expired are deprecated and will disappear. The API no longer counts either reason, so both are always 0 and both fields will be removed from the response. They are optional from this version, so code that reads them has to handle them being absent. The counts they used to carry are in free_other.
+
+### Features
+
+* **usage:** add free_other and retire two free counts ([2dddaaa](https://github.com/Checkslip/sdk-rust/commit/2dddaaa85ffc1558a7947c59643846120505a7f2))
+
+
+### Bug Fixes
+
+* **ci:** give the artifact step the tag it uses ([7f2e6bf](https://github.com/Checkslip/sdk-rust/commit/7f2e6bf76859e92bccbd540ec4da0d77acb13eb4))
+* **ci:** send a User-Agent when asking crates.io about a version ([ab74da6](https://github.com/Checkslip/sdk-rust/commit/ab74da6743b11f32ef0c008dcd876b764a4c856a))
+
 ## 0.1.0 (2026-11-09)
 
 
