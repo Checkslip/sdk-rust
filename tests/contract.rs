@@ -11,9 +11,9 @@ use std::time::Duration;
 
 use checkslip::time::macros::{date, datetime};
 use checkslip::{
-    Client, CountBucket, CountSlipsParams, CreateEndpoint, CreateEvidenceExport, FreeReason,
-    LedgerParams, ListDeliveriesParams, ListSlipsParams, LookupRequest, OrdersParams,
-    UpdateEndpoint, UsageBucket, UsageCounts, UsageParams,
+    ApiRequestsParams, Channel, Client, CountBucket, CountSlipsParams, CreateEndpoint,
+    CreateEvidenceExport, FreeReason, LedgerParams, ListDeliveriesParams, ListSlipsParams,
+    LookupRequest, OrdersParams, UpdateEndpoint, UsageBucket, UsageCounts, UsageParams,
 };
 use serde_json::json;
 use wiremock::matchers::{method, path};
@@ -285,4 +285,54 @@ fn usage_counts_parse_with_or_without_the_deprecated_fields() {
         serde_json::from_value::<FreeReason>(json!("SOMETHING_NEW")).unwrap(),
         FreeReason::Unknown("SOMETHING_NEW".to_string())
     );
+}
+
+#[tokio::test]
+async fn audit_request_filters_repeat_the_key_for_each_value() {
+    // The spec declares these four as style=form with explode=true, so each
+    // value gets its own key instead of being joined into one.
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/audit/requests"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(json!({ "items": [], "next_cursor": null })),
+        )
+        .mount(&server)
+        .await;
+
+    let params = ApiRequestsParams::new()
+        .http_status([200, 429])
+        .outcome_code(["FOUND", "NOT_FOUND"])
+        .route(["/api/slips/lookup", "/api/usage"])
+        .channel([Channel::Api, Channel::Dashboard]);
+    client(&server)
+        .audit()
+        .requests()
+        .list(&params)
+        .await
+        .expect("the multi-value filters must be accepted");
+
+    let got = &server.received_requests().await.unwrap()[0];
+    let pairs: Vec<(String, String)> = got
+        .url
+        .query_pairs()
+        .map(|(k, v)| (k.into_owned(), v.into_owned()))
+        .collect();
+    for expected in [
+        ("http_status", "200"),
+        ("http_status", "429"),
+        ("outcome_code", "FOUND"),
+        ("outcome_code", "NOT_FOUND"),
+        ("route", "/api/slips/lookup"),
+        ("route", "/api/usage"),
+        ("channel", "API"),
+        ("channel", "DASHBOARD"),
+    ] {
+        assert!(
+            pairs
+                .iter()
+                .any(|(k, v)| k == expected.0 && v == expected.1),
+            "missing {expected:?} in {pairs:?}"
+        );
+    }
 }
