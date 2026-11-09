@@ -3,7 +3,7 @@ use time::{Date, OffsetDateTime};
 use uuid::Uuid;
 
 use super::common::{date_format, Channel};
-use crate::query::{push_opt, push_time, Query};
+use crate::query::{push_list, push_opt, push_time, Query};
 
 string_enum! {
     /// Who did something.
@@ -239,14 +239,15 @@ pub struct ApiRequestsParams {
     pub from: Option<OffsetDateTime>,
     /// End of the range. At most 31 days after `from`.
     pub to: Option<OffsetDateTime>,
-    /// Only this status.
-    pub http_status: Option<u16>,
-    /// Only this result code.
-    pub outcome_code: Option<String>,
-    /// Only this route.
-    pub route: Option<String>,
-    /// Only this channel.
-    pub channel: Option<Channel>,
+    /// Only these statuses. A record matches when it matches any one of
+    /// them; the API allows at most 20.
+    pub http_status: Vec<u16>,
+    /// Only these result codes. At most 20.
+    pub outcome_code: Vec<String>,
+    /// Only these routes. At most 20.
+    pub route: Vec<String>,
+    /// Only these channels. At most 5.
+    pub channel: Vec<Channel>,
     /// Only this API key.
     pub api_key_id: Option<String>,
     /// Only requests about this transaction reference.
@@ -260,14 +261,80 @@ pub struct ApiRequestsParams {
 }
 
 impl ApiRequestsParams {
+    /// No filters.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Only requests in this time range.
+    pub fn range(mut self, from: OffsetDateTime, to: OffsetDateTime) -> Self {
+        self.from = Some(from);
+        self.to = Some(to);
+        self
+    }
+
+    /// Only requests that answered one of these statuses.
+    pub fn http_status(mut self, statuses: impl IntoIterator<Item = u16>) -> Self {
+        self.http_status = statuses.into_iter().collect();
+        self
+    }
+
+    /// Only requests whose result is one of these codes.
+    pub fn outcome_code<S: Into<String>>(mut self, codes: impl IntoIterator<Item = S>) -> Self {
+        self.outcome_code = codes.into_iter().map(Into::into).collect();
+        self
+    }
+
+    /// Only requests to one of these routes.
+    pub fn route<S: Into<String>>(mut self, routes: impl IntoIterator<Item = S>) -> Self {
+        self.route = routes.into_iter().map(Into::into).collect();
+        self
+    }
+
+    /// Only requests that arrived through one of these channels.
+    pub fn channel(mut self, channels: impl IntoIterator<Item = Channel>) -> Self {
+        self.channel = channels.into_iter().collect();
+        self
+    }
+
+    /// Only requests made with this API key.
+    pub fn api_key_id(mut self, id: impl Into<String>) -> Self {
+        self.api_key_id = Some(id.into());
+        self
+    }
+
+    /// Only requests about this transaction reference.
+    pub fn trans_ref(mut self, trans_ref: impl Into<String>) -> Self {
+        self.trans_ref = Some(trans_ref.into());
+        self
+    }
+
+    /// Only requests carrying this QR hash.
+    pub fn qr_sha256(mut self, hash: impl Into<String>) -> Self {
+        self.qr_sha256 = Some(hash.into());
+        self
+    }
+
+    /// Sets the page size (1 to 100).
+    pub fn limit(mut self, limit: u32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Starts from this cursor.
+    pub fn cursor(mut self, cursor: impl Into<String>) -> Self {
+        self.cursor = Some(cursor.into());
+        self
+    }
+
     pub(crate) fn to_query(&self) -> Query {
         let mut q = Vec::new();
         push_time(&mut q, "from", self.from);
         push_time(&mut q, "to", self.to);
-        push_opt(&mut q, "http_status", &self.http_status);
-        push_opt(&mut q, "outcome_code", &self.outcome_code);
-        push_opt(&mut q, "route", &self.route);
-        push_opt(&mut q, "channel", &self.channel);
+        push_list(&mut q, "http_status", &self.http_status);
+        push_list(&mut q, "outcome_code", &self.outcome_code);
+        push_list(&mut q, "route", &self.route);
+        push_list(&mut q, "channel", &self.channel);
         push_opt(&mut q, "api_key_id", &self.api_key_id);
         push_opt(&mut q, "trans_ref", &self.trans_ref);
         push_opt(&mut q, "qr_sha256", &self.qr_sha256);
