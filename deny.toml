@@ -6,7 +6,20 @@ all-features = true
 [advisories]
 # RustSec advisory database; any unignored advisory fails CI.
 yanked = "deny"
-ignore = []
+ignore = [
+  # RUSTSEC-2026-0009: stack exhaustion when time parses untrusted input in
+  # the RFC 2822 format. This crate never parses RFC 2822: timestamps use
+  # RFC 3339, dates use an explicit format description, and Retry-After is
+  # read as an integer number of seconds. The vulnerable parser is therefore
+  # unreachable from here.
+  #
+  # The fix landed in time 0.3.47, which is written in edition 2024 and so
+  # cannot be built by Cargo 1.75, the minimum supported version of this
+  # crate. Raising the MSRV would take the fix; that is a support decision,
+  # not a security one, while the path stays unreachable. Revisit whenever the
+  # MSRV moves.
+  "RUSTSEC-2026-0009",
+]
 
 [licenses]
 allow = [
@@ -17,8 +30,8 @@ allow = [
   "BSD-3-Clause",
   "ISC",
   "Unicode-3.0",
-  "Unicode-DFS-2016",
   "Zlib",
+  "Unicode-DFS-2016",
   "CDLA-Permissive-2.0",
   "MPL-2.0",
 ]
