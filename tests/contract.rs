@@ -11,9 +11,9 @@ use std::time::Duration;
 
 use checkslip::time::macros::{date, datetime};
 use checkslip::{
-    Client, CountBucket, CountSlipsParams, CreateEndpoint, CreateEvidenceExport, LedgerParams,
-    ListDeliveriesParams, ListSlipsParams, LookupRequest, OrdersParams, UpdateEndpoint,
-    UsageParams,
+    Client, CountBucket, CountSlipsParams, CreateEndpoint, CreateEvidenceExport, FreeReason,
+    LedgerParams, ListDeliveriesParams, ListSlipsParams, LookupRequest, OrdersParams,
+    UpdateEndpoint, UsageBucket, UsageCounts, UsageParams,
 };
 use serde_json::json;
 use wiremock::matchers::{method, path};
@@ -68,7 +68,7 @@ async fn canonical_surface(c: &Client) {
     c.billing().receipts().list_all();
     c.billing().receipts().get(uuid);
 
-    // metering (1)
+    // usage (1)
     c.usage().get(&UsageParams::new(
         date!(2026 - 11 - 01),
         date!(2026 - 11 - 09),
@@ -232,4 +232,57 @@ async fn a_payload_with_unmodelled_fields_still_parses() {
         .await
         .expect("unmodelled fields must not break parsing");
     assert_eq!(check.outcome, checkslip::Outcome::NotFound);
+}
+
+#[test]
+fn usage_counts_parse_with_or_without_the_deprecated_fields() {
+    // The API added free_other, stopped counting free_no_credit and
+    // free_hold_expired, and will drop those two fields. The crate and the
+    // API are deployed separately, so a response from either side of that
+    // change has to parse.
+    let full = json!({
+        "checks": 12, "charged": 7, "free_not_found": 1, "free_duplicate": 0,
+        "free_unavailable": 0, "free_invalid_qr": 0, "free_invalid_file": 0,
+        "free_qr_tampered": 0, "free_too_old": 0, "free_no_credit": 3,
+        "free_hold_expired": 2, "free_system_error": 0
+    });
+    let before: UsageCounts =
+        serde_json::from_value(full).expect("the shape with the deprecated fields must parse");
+    assert_eq!(before.free_no_credit, 3);
+    assert_eq!(before.free_hold_expired, 2);
+    assert_eq!(
+        before.free_other, 0,
+        "a server that predates the field sends no count"
+    );
+
+    let trimmed = json!({
+        "checks": 12, "charged": 7, "free_not_found": 1, "free_duplicate": 0,
+        "free_unavailable": 0, "free_invalid_qr": 0, "free_invalid_file": 0,
+        "free_qr_tampered": 0, "free_too_old": 0, "free_system_error": 0,
+        "free_other": 5
+    });
+    let after: UsageCounts =
+        serde_json::from_value(trimmed.clone()).expect("the shape without the deprecated fields must parse");
+    assert_eq!(after.free_other, 5);
+    assert_eq!(after.free_no_credit, 0);
+    assert_eq!(after.free_hold_expired, 0);
+
+    // UsageBucket flattens the counts, so the defaults have to survive that too.
+    let mut bucket = trimmed;
+    bucket["start"] = json!("2026-11-01");
+    let bucket: UsageBucket =
+        serde_json::from_value(bucket).expect("a flattened bucket must parse as well");
+    assert_eq!(bucket.counts.free_other, 5);
+    assert_eq!(bucket.counts.free_no_credit, 0);
+
+    assert_eq!(FreeReason::Other.as_str(), "OTHER");
+    assert_eq!(
+        serde_json::from_value::<FreeReason>(json!("OTHER")).unwrap(),
+        FreeReason::Other
+    );
+    // A reason added after this version still arrives whole.
+    assert_eq!(
+        serde_json::from_value::<FreeReason>(json!("SOMETHING_NEW")).unwrap(),
+        FreeReason::Unknown("SOMETHING_NEW".to_string())
+    );
 }

@@ -57,11 +57,18 @@ string_enum! {
         /// The transfer was too old.
         TooOld = "TOO_OLD",
         /// The account had no credit.
+        ///
+        /// The API no longer sends this reason. It sends
+        /// [`FreeReason::Other`] in its place.
         NoCredit = "NO_CREDIT",
         /// The credit hold ran out before the bank answered.
+        ///
+        /// Replaced by [`FreeReason::Other`], like [`FreeReason::NoCredit`].
         HoldExpired = "HOLD_EXPIRED",
         /// Checkslip failed on its side.
         SystemError = "SYSTEM_ERROR",
+        /// Not charged, and no reason given.
+        Other = "OTHER",
     }
 }
 
