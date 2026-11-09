@@ -261,8 +261,8 @@ fn usage_counts_parse_with_or_without_the_deprecated_fields() {
         "free_qr_tampered": 0, "free_too_old": 0, "free_system_error": 0,
         "free_other": 5
     });
-    let after: UsageCounts =
-        serde_json::from_value(trimmed.clone()).expect("the shape without the deprecated fields must parse");
+    let after: UsageCounts = serde_json::from_value(trimmed.clone())
+        .expect("the shape without the deprecated fields must parse");
     assert_eq!(after.free_other, 5);
     assert_eq!(after.free_no_credit, 0);
     assert_eq!(after.free_hold_expired, 0);
