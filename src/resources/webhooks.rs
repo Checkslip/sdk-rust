@@ -43,6 +43,8 @@ impl Webhooks {
     ///
     /// [`crate::webhook::Webhook`] does the same without a client, and takes
     /// both secrets during a rotation.
+    #[cfg(feature = "webhooks")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "webhooks")))]
     pub fn verify(
         &self,
         headers: &reqwest::header::HeaderMap,

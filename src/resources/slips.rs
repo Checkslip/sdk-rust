@@ -249,7 +249,7 @@ pub struct SlipExports {
 impl SlipExports {
     /// Starts a CSV export of lookup history. Small exports come back
     /// `READY`; larger ones are `QUEUED` and you poll
-    /// [`get_export`](Self::get_export).
+    /// [`get`](Self::get).
     pub async fn create(&self, req: &SlipExportRequest) -> Result<SlipExport> {
         let spec = RequestSpec::new(Method::POST, &["api", "slips", "exports"]).json(req)?;
         self.client.send_json(spec).await

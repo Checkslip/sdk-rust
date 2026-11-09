@@ -303,7 +303,7 @@ string_enum! {
     }
 }
 
-/// Body for [`Audit::create_export`](crate::resources::Audit::create_export).
+/// Body for [`AuditExports::create`](crate::resources::AuditExports::create).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[non_exhaustive]
 pub struct CreateEvidenceExport {

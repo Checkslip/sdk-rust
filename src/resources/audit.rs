@@ -119,8 +119,8 @@ pub struct AuditExports {
 }
 
 impl AuditExports {
-    /// Starts an evidence export. Poll [`export`](Self::export) until its
-    /// status is `READY`, then [`download_export`](Self::download_export).
+    /// Starts an evidence export. Poll [`get`](Self::get) until its
+    /// status is `READY`, then [`download`](Self::download).
     pub async fn create(
         &self,
         req: &CreateEvidenceExport,
