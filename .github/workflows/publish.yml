@@ -87,7 +87,10 @@ jobs:
         id: published
         run: |
           version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
-          if curl -fsS "https://crates.io/api/v1/crates/checkslip/${version}" >/dev/null 2>&1; then
+          # crates.io rejects requests without a User-Agent, and a rejected
+          # request looks exactly like "not published yet". Send one.
+          if curl -fsS -H 'User-Agent: checkslip-sdk-release (github.com/Checkslip/sdk-rust)' \
+               "https://crates.io/api/v1/crates/checkslip/${version}" >/dev/null 2>&1; then
             echo "::notice::checkslip ${version} is already on crates.io; skipping the publish"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
