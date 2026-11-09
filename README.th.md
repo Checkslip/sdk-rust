@@ -15,7 +15,7 @@ Checkslip ใช้ดึงข้อมูลรายการโอนเง�
 
 ```toml
 [dependencies]
-checkslip = "0.1"
+checkslip = "0.2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -200,7 +200,7 @@ while let Some(record) = found.try_next().await? {
 เพื่อใช้ตัวตรวจลายเซ็น
 
 ```toml
-checkslip = { version = "0.1", features = ["webhooks"] }
+checkslip = { version = "0.2", features = ["webhooks"] }
 ```
 
 ```rust,no_run
@@ -249,7 +249,7 @@ match hook.verify(headers, raw_body)? {
 ถ้าจะใช้ TLS ของระบบแทน rustls
 
 ```toml
-checkslip = { version = "0.1", default-features = false, features = ["native-tls"] }
+checkslip = { version = "0.2", default-features = false, features = ["native-tls"] }
 ```
 
 blocking client รัน async client บน Tokio runtime ส่วนตัว ห้ามเรียกจากโค้ด async

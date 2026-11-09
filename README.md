@@ -16,7 +16,7 @@ API reference: <https://checkslip.com/docs/reference>
 
 ```toml
 [dependencies]
-checkslip = "0.1"
+checkslip = "0.2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -243,7 +243,7 @@ signed the [Standard Webhooks](https://www.standardwebhooks.com/) way, and the
 `webhooks` feature adds a checker:
 
 ```toml
-checkslip = { version = "0.1", features = ["webhooks"] }
+checkslip = { version = "0.2", features = ["webhooks"] }
 ```
 
 ```rust,no_run
@@ -295,7 +295,7 @@ and call `verify_signature`.
 To use the platform TLS library instead of rustls:
 
 ```toml
-checkslip = { version = "0.1", default-features = false, features = ["native-tls"] }
+checkslip = { version = "0.2", default-features = false, features = ["native-tls"] }
 ```
 
 The blocking client runs the async client on a private Tokio runtime. Do not
