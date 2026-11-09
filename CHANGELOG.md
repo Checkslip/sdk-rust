@@ -4,6 +4,33 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.0 (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **api:** nest resources to match the shared surface
+
+### Features
+
+* add the async Checkslip API client ([f58c792](https://github.com/Checkslip/sdk-rust/commit/f58c7928f3a95fcbf162e0d30a8fcf6776a3356d))
+
+
+### Bug Fixes
+
+* **ci:** bump the version constant and stop CI cancelling itself ([0517e1d](https://github.com/Checkslip/sdk-rust/commit/0517e1d8222467da597f9bfce0d81cf29af3f740))
+* **ci:** call publish from the release job ([8bb84cb](https://github.com/Checkslip/sdk-rust/commit/8bb84cbbce2bec7fc63fa7e3e198ccc845408bad))
+* **ci:** check the release pull request before it is merged ([76fac45](https://github.com/Checkslip/sdk-rust/commit/76fac451d8331684564028b1855c2ba5bacef47f))
+* **ci:** publish through the release workflow, never directly ([14863ba](https://github.com/Checkslip/sdk-rust/commit/14863bacb1ffe4b8c7d64af91259ae77c6de577a))
+* **ci:** stop the publish job waiting for itself ([95c898e](https://github.com/Checkslip/sdk-rust/commit/95c898e24cee0e600c7ed84fb1f40421db264f24))
+* **deps:** record why RUSTSEC-2026-0009 does not apply ([d612c5c](https://github.com/Checkslip/sdk-rust/commit/d612c5ccf4c46d49bd9d18cb10723b1da6ca57b0))
+* **webhooks:** gate verify behind the webhooks feature ([377234d](https://github.com/Checkslip/sdk-rust/commit/377234db96127abd269b63069db8058d90700536))
+
+
+### Code Refactoring
+
+* **api:** nest resources to match the shared surface ([c2384d2](https://github.com/Checkslip/sdk-rust/commit/c2384d22114c842ca6ac0eec0fb5368b1b0d33e6))
+
 ## [Unreleased]
 
 ## [0.1.0] - 2026-11-09
