@@ -1,6 +1,6 @@
 [package]
 name = "checkslip"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.75"
 description = "Official Rust client for the Checkslip API: look up Thai bank transfers from a slip QR or image"

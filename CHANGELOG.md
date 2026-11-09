@@ -4,6 +4,17 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/Checkslip/sdk-rust/compare/v0.2.1...v0.3.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **audit:** the four request filters take a list instead of a single value. A call that passed one value now passes a list of one.
+
+### Features
+
+* **audit:** take several values per request filter ([b4d4f62](https://github.com/Checkslip/sdk-rust/commit/b4d4f62c2de8702ba8dea31606fac96abdd90f3f))
+
 ## [0.2.1](https://github.com/Checkslip/sdk-rust/compare/v0.2.0...v0.2.1) (2026-11-09)
 
 
