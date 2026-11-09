@@ -21,9 +21,18 @@ footer a major one. Before 1.0.0 a breaking change bumps the minor.
 ## What a human has to do once
 
 - **0.1.0 has to be published by hand**, because crates.io will only accept a
-  trusted publisher for a crate that already exists. After that, link this
-  repository as the trusted publisher for the `checkslip` crate on crates.io
-  and the workflow takes over, with no token stored anywhere.
+  trusted publisher for a crate that already exists. After that, add the
+  trusted publisher for the `checkslip` crate on crates.io as:
+  - repository: `Checkslip/sdk-rust`
+  - workflow: `release-please.yml`
+  - environment: `release`
+
+  The workflow is **`release-please.yml`, not `publish.yml`**, even though the
+  publish happens in `publish.yml`. The OIDC token's `workflow_ref` claim names
+  the workflow that started the run, and `publish.yml` is a reusable workflow
+  called by the release job. Naming the reusable file makes the registry reject
+  the token. Once it is linked, the workflow takes over with no token stored
+  anywhere.
 - Allow GitHub Actions to create pull requests in the repository settings, or
   release-please cannot open its release pull request.
 - A `release` environment gates the publish job, so a release can require a
