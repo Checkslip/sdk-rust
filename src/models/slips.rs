@@ -78,8 +78,7 @@ string_enum! {
 /// payment is your decision: compare `slip` against your own order (amount,
 /// receiver, time).
 /// latency_ms, upstream_ms and checked_elsewhere are deliberately absent:
-/// they are being withdrawn from the Checkslip API, so your code will not
-/// break when it stops sending them.
+/// they left the Checkslip API, so this crate does not carry them.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct SlipCheck {
