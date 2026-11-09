@@ -1,7 +1,9 @@
 name: Publish
 
-# Called by release-please.yml once it has cut a release, and usable on its own
-# if a release is ever published by hand.
+# Called by release-please.yml, never run on its own. Two reasons: the OIDC
+# token's workflow_ref claim names the workflow that STARTED the run, so a
+# registry trusting release-please.yml rejects a token minted by a direct run
+# of this file; and id-token: write has to come from the caller.
 #
 # A release created with GITHUB_TOKEN does not trigger `on: release`, which is
 # GitHub's guard against workflows setting each other off. So the release job
@@ -12,12 +14,6 @@ name: Publish
 
 on:
   workflow_call:
-    inputs:
-      tag:
-        description: The tag to publish, for example v0.1.0.
-        required: true
-        type: string
-  workflow_dispatch:
     inputs:
       tag:
         description: The tag to publish, for example v0.1.0.
