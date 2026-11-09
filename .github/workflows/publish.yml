@@ -111,6 +111,7 @@ jobs:
 
       - name: Attach the packaged crate to the release
         env:
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
           crate="$(find target/package -maxdepth 1 -name '*.crate' | head -1)"
