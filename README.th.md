@@ -23,7 +23,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 ## เริ่มใช้งาน
 
-สร้าง API key ในแดชบอร์ด Checkslip (ขึ้นต้นด้วย `csk_`) อย่าเขียน key
+ออก API key ในแดชบอร์ด Checkslip (ขึ้นต้นด้วย `csk_`) อย่าเขียน key
 ลงในซอร์สโค้ด ให้ส่งผ่าน environment variable แทน
 
 ```rust,no_run
