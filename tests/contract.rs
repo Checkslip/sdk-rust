@@ -1,5 +1,5 @@
-//! Guards the cross-language SDK contract in docs/sdk-naming.md, so the four
-//! SDKs cannot drift apart again.
+//! Guards the surface the four Checkslip SDKs share, so the clients cannot
+//! drift apart.
 //!
 //! Rust has no runtime reflection, so the naming check is a compile-time one:
 //! `canonical_surface` names every method the table lists, and this file stops
