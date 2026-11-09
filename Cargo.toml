@@ -1,0 +1,56 @@
+[package]
+name = "checkslip"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Official Rust client for the Checkslip API: look up Thai bank transfers from a slip QR or image"
+license = "MIT"
+repository = "https://github.com/Checkslip/checkslip-rust"
+homepage = "https://checkslip.com"
+documentation = "https://docs.rs/checkslip"
+readme = "README.md"
+keywords = ["checkslip", "promptpay", "bank-slip", "thailand", "api-client"]
+categories = ["api-bindings", "web-programming::http-client"]
+authors = ["Checkslip <security@checkslip.com>"]
+include = ["src/**/*", "Cargo.toml", "README.md", "README.th.md", "CHANGELOG.md", "LICENSE", "SECURITY.md"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["rustls-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
+native-tls = ["reqwest/native-tls"]
+blocking = ["tokio/rt"]
+webhooks = ["dep:hmac", "dep:sha2", "dep:base64", "dep:subtle"]
+
+[dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "http2"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+futures-core = "0.3"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+tokio = { version = "1.32", default-features = false, features = ["time"] }
+time = { version = "0.3.30", features = ["serde", "formatting", "parsing", "macros"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+url = "2.5"
+fastrand = "2"
+bytes = "1"
+hmac = { version = "0.12", optional = true }
+sha2 = { version = "0.10", optional = true }
+base64 = { version = "0.22", optional = true }
+subtle = { version = "2.5", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1.32", features = ["macros", "rt-multi-thread"] }
+wiremock = "0.6"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+
+[[example]]
+name = "lookup_qr"
+
+[[example]]
+name = "verify_webhook"
+required-features = ["webhooks"]

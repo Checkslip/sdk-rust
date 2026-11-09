@@ -1,0 +1,4 @@
+# Pick dependency versions that still build on the MSRV in Cargo.toml.
+# Cargo 1.84 and later read this; older Cargo ignores it.
+[resolver]
+incompatible-rust-versions = "fallback"
