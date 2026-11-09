@@ -125,6 +125,13 @@ pub struct Slips {
 }
 
 impl Slips {
+    /// CSV exports of past lookups.
+    pub fn exports(&self) -> SlipExports {
+        SlipExports {
+            client: self.client.clone(),
+        }
+    }
+
     pub(crate) fn new(client: Client) -> Self {
         Slips { client }
     }
@@ -218,17 +225,37 @@ impl Slips {
             .get_json(&["api", "slips", "counts"], params.to_query())
             .await
     }
+}
 
+#[cfg(test)]
+mod tests {
+    use super::sniff_image;
+
+    #[test]
+    fn sniffs_common_formats() {
+        assert_eq!(sniff_image(&[0xFF, 0xD8, 0xFF, 0xE0]).0, "image/jpeg");
+        assert_eq!(sniff_image(b"\x89PNG\r\n\x1a\n").0, "image/png");
+        assert_eq!(sniff_image(b"RIFF\0\0\0\0WEBPVP8 ").0, "image/webp");
+        assert_eq!(sniff_image(b"GIF89a").0, "application/octet-stream");
+    }
+}
+
+/// CSV exports of past lookups.
+#[derive(Debug, Clone)]
+pub struct SlipExports {
+    client: Client,
+}
+
+impl SlipExports {
     /// Starts a CSV export of lookup history. Small exports come back
     /// `READY`; larger ones are `QUEUED` and you poll
     /// [`get_export`](Self::get_export).
-    pub async fn create_export(&self, req: &SlipExportRequest) -> Result<SlipExport> {
+    pub async fn create(&self, req: &SlipExportRequest) -> Result<SlipExport> {
         let spec = RequestSpec::new(Method::POST, &["api", "slips", "exports"]).json(req)?;
         self.client.send_json(spec).await
     }
-
     /// The state of a CSV export.
-    pub async fn get_export(&self, export_id: Uuid) -> Result<SlipExport> {
+    pub async fn get(&self, export_id: Uuid) -> Result<SlipExport> {
         self.client
             .get_json(
                 &["api", "slips", "exports", &export_id.to_string()],
@@ -236,9 +263,8 @@ impl Slips {
             )
             .await
     }
-
     /// Downloads one CSV part of a `READY` export.
-    pub async fn download_export_part(&self, export_id: Uuid, part: &ExportPart) -> Result<Bytes> {
+    pub async fn download_part(&self, export_id: Uuid, part: &ExportPart) -> Result<Bytes> {
         let sig = url::Url::parse(&part.url)
             .ok()
             .and_then(|u| {
@@ -260,18 +286,5 @@ impl Slips {
         )
         .query(vec![("sig", sig)]);
         self.client.send_bytes(spec).await
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::sniff_image;
-
-    #[test]
-    fn sniffs_common_formats() {
-        assert_eq!(sniff_image(&[0xFF, 0xD8, 0xFF, 0xE0]).0, "image/jpeg");
-        assert_eq!(sniff_image(b"\x89PNG\r\n\x1a\n").0, "image/png");
-        assert_eq!(sniff_image(b"RIFF\0\0\0\0WEBPVP8 ").0, "image/webp");
-        assert_eq!(sniff_image(b"GIF89a").0, "application/octet-stream");
     }
 }

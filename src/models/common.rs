@@ -137,7 +137,7 @@ pub struct SlipSummary {
 #[non_exhaustive]
 pub enum SlipData {
     /// The full record (outcome `FOUND`).
-    Full(Box<Slip>),
+    Full(Slip),
     /// A summary (other outcomes).
     Summary(SlipSummary),
 }

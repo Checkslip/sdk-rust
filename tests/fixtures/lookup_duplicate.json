@@ -1,0 +1,29 @@
+{
+  "request_id": "0192d4e2-1111-7c00-8000-000000000002",
+  "outcome": "DUPLICATE",
+  "checked_at": "2026-10-29T10:45:10+07:00",
+  "slip": {
+    "trans_ref": "630210534087",
+    "sender_bank": {
+      "code": "KKP",
+      "bot_code": "069",
+      "name_th": "ธนาคารเกียรตินาคินภัทร",
+      "name_en": "Kiatnakin Phatra Bank"
+    },
+    "receiver_bank": {
+      "code": "GSB",
+      "bot_code": "030",
+      "name_th": "ธนาคารออมสิน",
+      "name_en": "Government Savings Bank"
+    },
+    "transferred_at": "2026-10-29T10:33:30+07:00",
+    "amount": {
+      "satang": 5000,
+      "currency": "THB"
+    }
+  },
+  "duplicate_of": {
+    "request_id": "0192d4e0-7c1a-7b3e-9f00-1a2b3c4d5e6f",
+    "checked_at": "2026-10-29T10:41:02+07:00"
+  }
+}

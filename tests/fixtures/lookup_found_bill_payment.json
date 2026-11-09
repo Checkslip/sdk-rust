@@ -1,0 +1,31 @@
+{
+  "request_id": "0192d4e0-7c1a-7b3e-9f00-1a2b3c4d5e70",
+  "outcome": "FOUND",
+  "checked_at": "2026-10-29T10:41:02+07:00",
+  "slip": {
+    "trans_ref": "630210534088",
+    "transferred_at": "2026-10-29T10:33:30+07:00",
+    "amount": {
+      "satang": 125050,
+      "currency": "THB"
+    },
+    "sender": {
+      "bank": {
+        "code": "KKP",
+        "bot_code": "069",
+        "name_th": "ธนาคารเกียรตินาคินภัทร",
+        "name_en": "Kiatnakin Phatra Bank"
+      },
+      "name_th": "นาย สมชาย ใ",
+      "name_en": "MR. SOMCHAI J",
+      "account": "0439"
+    },
+    "receiver": {
+      "kind": "BILL_PAYMENT",
+      "bank": null,
+      "name_th": "บริษัท ตัวอย่าง จำกัด",
+      "name_en": null,
+      "account": null
+    }
+  }
+}

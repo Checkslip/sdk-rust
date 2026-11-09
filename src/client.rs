@@ -13,9 +13,8 @@ use serde::de::DeserializeOwned;
 use url::Url;
 
 use crate::error::{Error, Problem, Result};
-use crate::models::{SupportedBank, Usage, UsageParams};
 use crate::query::Query;
-use crate::resources::{Audit, Billing, Slips, Webhooks};
+use crate::resources::{Audit, Banks, Billing, Slips, Usage, Webhooks};
 
 /// The production API.
 pub const DEFAULT_BASE_URL: &str = "https://api.checkslip.com";
@@ -118,23 +117,19 @@ impl Client {
     }
 
     /// Audit log, API request log and evidence exports.
+    /// Banks Checkslip can look up transfers with.
+    pub fn banks(&self) -> Banks {
+        Banks::new(self.clone())
+    }
+
+    /// How many credits the account used.
+    pub fn usage(&self) -> Usage {
+        Usage::new(self.clone())
+    }
+
+    /// The account's audit log.
     pub fn audit(&self) -> Audit {
         Audit::new(self.clone())
-    }
-
-    /// Banks Checkslip can look up transfers from. Needs no API key.
-    pub async fn banks(&self) -> Result<Vec<SupportedBank>> {
-        #[derive(serde::Deserialize)]
-        struct List {
-            items: Vec<SupportedBank>,
-        }
-        let list: List = self.get_json(&["api", "banks"], Vec::new()).await?;
-        Ok(list.items)
-    }
-
-    /// Lookup and credit counts per day or month, in Bangkok time.
-    pub async fn usage(&self, params: &UsageParams) -> Result<Usage> {
-        self.get_json(&["api", "usage"], params.to_query()).await
     }
 
     // ----- plumbing used by the resource modules -----

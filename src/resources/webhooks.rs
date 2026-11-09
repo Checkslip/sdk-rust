@@ -30,23 +30,33 @@ impl Webhooks {
     }
 
     /// Messages sent to your endpoints.
-    pub fn deliveries(&self) -> Deliveries {
-        Deliveries {
+    /// The event types Checkslip can send.
+    pub fn event_types(&self) -> EventTypes {
+        EventTypes {
             client: self.client.clone(),
         }
     }
 
-    /// Event types you can subscribe to.
-    pub async fn event_types(&self) -> Result<Vec<EventTypeInfo>> {
-        #[derive(serde::Deserialize)]
-        struct List {
-            items: Vec<EventTypeInfo>,
+    /// Checks the signature of a message your server received and returns the
+    /// parsed event. It sends nothing, so it works on a client whose API key is
+    /// never used.
+    ///
+    /// [`crate::webhook::Webhook`] does the same without a client, and takes
+    /// both secrets during a rotation.
+    pub fn verify(
+        &self,
+        headers: &reqwest::header::HeaderMap,
+        body: &[u8],
+        secret: &str,
+    ) -> std::result::Result<crate::models::WebhookEvent, crate::webhook::WebhookError> {
+        crate::webhook::Webhook::new(secret)?.verify(headers, body)
+    }
+
+    /// Messages queued for endpoints, with every send attempt.
+    pub fn deliveries(&self) -> Deliveries {
+        Deliveries {
+            client: self.client.clone(),
         }
-        let l: List = self
-            .client
-            .get_json(&["api", "webhooks", "event-types"], Vec::new())
-            .await?;
-        Ok(l.items)
     }
 }
 
@@ -195,5 +205,26 @@ impl Deliveries {
         )
         .idempotency_key(idempotency_key.map(str::to_owned));
         self.client.send_json(spec).await
+    }
+}
+
+/// The event types Checkslip can send.
+#[derive(Debug, Clone)]
+pub struct EventTypes {
+    client: Client,
+}
+
+impl EventTypes {
+    /// Event types you can subscribe to.
+    pub async fn list(&self) -> Result<Vec<EventTypeInfo>> {
+        #[derive(serde::Deserialize)]
+        struct List {
+            items: Vec<EventTypeInfo>,
+        }
+        let l: List = self
+            .client
+            .get_json(&["api", "webhooks", "event-types"], Vec::new())
+            .await?;
+        Ok(l.items)
     }
 }

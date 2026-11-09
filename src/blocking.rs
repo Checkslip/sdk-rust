@@ -13,7 +13,7 @@
 //! println!("{}", check.outcome);
 //!
 //! // Anything else: run the async call to completion.
-//! let balance = client.block_on(client.inner().billing().balance())?;
+//! let balance = client.block_on(client.inner().billing().balance().get())?;
 //! println!("{} credits left", balance.credits);
 //! # Ok::<(), checkslip::Error>(())
 //! ```
@@ -86,16 +86,16 @@ impl Client {
 
     /// See [`Billing::balance`](crate::resources::Billing::balance).
     pub fn balance(&self) -> Result<Balance> {
-        self.block_on(self.inner.billing().balance())
+        self.block_on(self.inner.billing().balance().get())
     }
 
     /// See [`crate::Client::usage`].
     pub fn usage(&self, params: &UsageParams) -> Result<Usage> {
-        self.block_on(self.inner.usage(params))
+        self.block_on(self.inner.usage().get(params))
     }
 
     /// See [`crate::Client::banks`].
     pub fn banks(&self) -> Result<Vec<SupportedBank>> {
-        self.block_on(self.inner.banks())
+        self.block_on(self.inner.banks().list())
     }
 }

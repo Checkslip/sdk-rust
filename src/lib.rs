@@ -59,7 +59,7 @@
 //! Rust 1.75.
 
 #![deny(missing_docs)]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
 mod macros;
@@ -87,6 +87,15 @@ pub use error::{Error, FieldError, Problem, Result};
 pub use models::*;
 pub use pagination::ItemStream;
 pub use resources::LookupRequest;
+
+// Compile the code samples in the READMEs as doc tests.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;
+
+#[cfg(doctest)]
+#[doc = include_str!("../README.th.md")]
+struct ReadmeThDoctests;
 
 /// The `time` crate, re-exported so you can build dates without adding it.
 pub use time;

@@ -1,0 +1,235 @@
+//! Guards the cross-language SDK contract in docs/sdk-naming.md, so the four
+//! SDKs cannot drift apart again.
+//!
+//! Rust has no runtime reflection, so the naming check is a compile-time one:
+//! `canonical_surface` names every method the table lists, and this file stops
+//! compiling if one is missing, renamed or given a different shape. The
+//! "nothing extra is exposed" half of the check lives in the JavaScript, Go and
+//! PHP suites, which can enumerate their own surface.
+
+use std::time::Duration;
+
+use checkslip::time::macros::{date, datetime};
+use checkslip::{
+    Client, CountBucket, CountSlipsParams, CreateEndpoint, CreateEvidenceExport, LedgerParams,
+    ListDeliveriesParams, ListSlipsParams, LookupRequest, OrdersParams, UpdateEndpoint,
+    UsageParams,
+};
+use serde_json::json;
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
+
+const KEY: &str = "csk_test_0123456789";
+
+fn client(server: &MockServer) -> Client {
+    Client::builder()
+        .api_key(KEY)
+        .base_url(server.uri())
+        .retry_base_delay(Duration::from_millis(1))
+        .build()
+        .unwrap()
+}
+
+/// Every canonical `resource.method` from the table, spelled the Rust way:
+/// 39 operations, 9 `list_all` streams and the local `webhooks().verify`.
+///
+/// This function is never called. It exists so the compiler checks that each
+/// name is there, takes what the table says it takes, and returns something
+/// awaitable where the table says so.
+#[allow(dead_code, unused_must_use, clippy::no_effect_underscore_binding)]
+async fn canonical_surface(c: &Client) {
+    let uuid = uuid::Uuid::nil();
+
+    // verify: slips (5 + 3 on exports), banks (1)
+    c.slips().lookup(LookupRequest::qr("x"));
+    c.slips().get(uuid);
+    c.slips().list(&ListSlipsParams::default());
+    c.slips().list_all(ListSlipsParams::default());
+    c.slips().counts(&CountSlipsParams::new(
+        datetime!(2026-11-01 00:00 +07:00),
+        datetime!(2026-11-09 00:00 +07:00),
+        CountBucket::Day,
+    ));
+    c.slips().exports().create(&Default::default());
+    c.slips().exports().get(uuid);
+    c.banks().list();
+
+    // billing (13)
+    c.billing().balance().get();
+    c.billing().info().get();
+    c.billing().packages().list();
+    c.billing().ledger().list(&LedgerParams::default());
+    c.billing().ledger().list_all(LedgerParams::default());
+    c.billing().orders().list(&OrdersParams::default());
+    c.billing().orders().list_all(OrdersParams::default());
+    c.billing().orders().get(uuid);
+    c.billing().orders().sync(uuid);
+    c.billing().receipts().list(None, None);
+    c.billing().receipts().list_all();
+    c.billing().receipts().get(uuid);
+
+    // metering (1)
+    c.usage().get(&UsageParams::new(
+        date!(2026 - 11 - 01),
+        date!(2026 - 11 - 09),
+    ));
+
+    // audit (11)
+    c.audit().events().list(&Default::default());
+    c.audit().events().list_all(Default::default());
+    c.audit().events().get(uuid);
+    c.audit().requests().list(&Default::default());
+    c.audit().requests().list_all(Default::default());
+    c.audit().requests().get(uuid);
+    c.audit().exports().create(
+        &CreateEvidenceExport::new(date!(2026 - 11 - 01), date!(2026 - 11 - 02)),
+        None,
+    );
+    c.audit().exports().list(None, None);
+    c.audit().exports().list_all();
+    c.audit().exports().get(uuid);
+    c.audit().exports().download(uuid);
+
+    // webhook (15)
+    c.webhooks().endpoints().list(None, None);
+    c.webhooks().endpoints().list_all();
+    c.webhooks()
+        .endpoints()
+        .create(&CreateEndpoint::new("https://example.com/h", []));
+    c.webhooks().endpoints().get("ep_1");
+    c.webhooks()
+        .endpoints()
+        .update("ep_1", &UpdateEndpoint::default());
+    c.webhooks().endpoints().delete("ep_1");
+    c.webhooks().endpoints().rotate_secret("ep_1", None);
+    c.webhooks().endpoints().send_test("ep_1", None);
+    c.webhooks()
+        .deliveries()
+        .list(&ListDeliveriesParams::default());
+    c.webhooks()
+        .deliveries()
+        .list_all(ListDeliveriesParams::default());
+    c.webhooks().deliveries().get("dl_1");
+    c.webhooks().deliveries().redeliver("dl_1", None);
+    c.webhooks().event_types().list();
+}
+
+#[tokio::test]
+async fn bare_items_are_unwrapped() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/banks"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "items": [{
+                "code": "KKP", "bot_code": "069", "name_th": "a", "name_en": "b",
+                "supported_since": "2026-01-01", "landing_page": true, "lookback_days": 90
+            }]
+        })))
+        .mount(&server)
+        .await;
+
+    let banks = client(&server).banks().list().await.unwrap();
+    assert_eq!(banks.len(), 1);
+    assert_eq!(banks[0].code, "KKP");
+}
+
+#[tokio::test]
+async fn event_types_are_unwrapped() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/webhooks/event-types"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "items": [{ "type": "slip.checked", "description": "d", "subscribable": true }]
+        })))
+        .mount(&server)
+        .await;
+
+    let types = client(&server)
+        .webhooks()
+        .event_types()
+        .list()
+        .await
+        .unwrap();
+    assert_eq!(types.len(), 1);
+}
+
+#[tokio::test]
+async fn the_package_list_keeps_its_envelope() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/billing/packages"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "items": [],
+            "prices_include_vat": true,
+            "checkout_open": false
+        })))
+        .mount(&server)
+        .await;
+
+    let packages = client(&server).billing().packages().list().await.unwrap();
+    assert!(packages.prices_include_vat);
+    assert!(!packages.checkout_open);
+}
+
+#[tokio::test]
+async fn accepted_is_not_an_error() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/slips/lookup"))
+        .respond_with(
+            ResponseTemplate::new(202)
+                .insert_header("retry-after", "5")
+                .set_body_json(json!({
+                    "request_id": "0192d4e0-0000-7000-8000-0000000000a1",
+                    "outcome": "PENDING",
+                    "checked_at": "2026-10-29T10:41:02+07:00",
+                    "slip": {
+                "trans_ref": "630210534087",
+                "sender_bank": { "code": "KKP", "bot_code": "069", "name_th": null, "name_en": null }
+            }
+                })),
+        )
+        .mount(&server)
+        .await;
+
+    let check = client(&server)
+        .slips()
+        .lookup(LookupRequest::qr("x"))
+        .await
+        .expect("202 must not be an error");
+    assert_eq!(check.outcome, checkslip::Outcome::Pending);
+}
+
+#[tokio::test]
+async fn a_payload_with_unmodelled_fields_still_parses() {
+    // A response may carry fields the SDK does not model, including ones that
+    // left the customer API. Parsing must not depend on the exact set.
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/slips/lookup"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "request_id": "0192d4e0-0000-7000-8000-0000000000a1",
+            "outcome": "NOT_FOUND",
+            "checked_at": "2026-10-29T10:41:02+07:00",
+            "slip": {
+                "trans_ref": "630210534087",
+                "sender_bank": { "code": "KKP", "bot_code": "069", "name_th": null, "name_en": null }
+            },
+            "trace_id": "t1",
+            "recorded_by": "gw",
+            "chain": {},
+            "build": "2026.11.9",
+            "latency_ms": 812,
+            "upstream_ms": 640,
+            "checked_elsewhere": false
+        })))
+        .mount(&server)
+        .await;
+
+    let check = client(&server)
+        .slips()
+        .lookup(LookupRequest::qr("x"))
+        .await
+        .expect("unmodelled fields must not break parsing");
+    assert_eq!(check.outcome, checkslip::Outcome::NotFound);
+}

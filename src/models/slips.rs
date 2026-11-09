@@ -70,6 +70,9 @@ string_enum! {
 /// Checkslip returns what the sending bank has. Whether to accept the
 /// payment is your decision: compare `slip` against your own order (amount,
 /// receiver, time).
+/// latency_ms, upstream_ms and checked_elsewhere are deliberately absent:
+/// verify 0.61.0 takes them out of the contract and they are not carried here
+/// while that lands (checkslip/pm h-mw94dkac8a0, 9 Nov 2026).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct SlipCheck {
