@@ -1,10 +1,22 @@
 name: Publish
 
-# Runs when a GitHub Release appears, which release-please creates by merging
-# its release pull request. crates.io uses trusted publishing, so no token is
+# Called by release-please.yml once it has cut a release, and usable on its own
+# if a release is ever published by hand.
+#
+# A release created with GITHUB_TOKEN does not trigger `on: release`, which is
+# GitHub's guard against workflows setting each other off. So the release job
+# calls this one directly rather than relying on the event.
+#
+# crates.io uses trusted publishing, so no token is
 # stored: the job exchanges the GitHub OIDC token for a short-lived one.
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: The tag to publish, for example v0.1.0.
+        required: true
+        type: string
   release:
     types: [published]
 
@@ -22,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
           persist-credentials: false
 
       - name: CI passed on this commit
@@ -48,28 +60,37 @@ jobs:
           toolchain: stable
 
       - name: Tag matches Cargo.toml
+        env:
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
         run: |
           version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
-          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
-            echo "::error::tag ${GITHUB_REF_NAME} does not match Cargo.toml ${version}"
+          if [ "v${version}" != "${TAG}" ]; then
+            echo "::error::tag ${TAG} does not match Cargo.toml ${version}"
             exit 1
           fi
 
-      - name: Version is not on crates.io yet
+      # Publishing twice is not an error worth failing a release over: 0.1.0
+      # goes out by hand, and a re-run of this job should be harmless.
+      - name: Is this version already on crates.io?
+        id: published
         run: |
           version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
           if curl -fsS "https://crates.io/api/v1/crates/checkslip/${version}" >/dev/null 2>&1; then
-            echo "::error::checkslip ${version} is already published"
-            exit 1
+            echo "::notice::checkslip ${version} is already on crates.io; skipping the publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
       - run: cargo test --locked --all-features
       - run: cargo package --locked
 
-      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+      - if: steps.published.outputs.skip != 'true'
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
         id: auth
 
-      - run: cargo publish --locked
+      - if: steps.published.outputs.skip != 'true'
+        run: cargo publish --locked
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
@@ -79,5 +100,5 @@ jobs:
         run: |
           crate="$(find target/package -maxdepth 1 -name '*.crate' | head -1)"
           if [ -n "$crate" ]; then
-            gh release upload "${GITHUB_REF_NAME}" "$crate" --clobber
+            gh release upload "${TAG}" "$crate" --clobber
           fi
