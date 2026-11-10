@@ -4,6 +4,13 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1](https://github.com/Checkslip/sdk-rust/compare/v0.3.0...v0.3.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **docs:** say what an exhaustive match really needs ([7f0866f](https://github.com/Checkslip/sdk-rust/commit/7f0866fa3abebee3258280e95893ea624502265d))
+
 ## [0.3.0](https://github.com/Checkslip/sdk-rust/compare/v0.2.1...v0.3.0) (2026-11-09)
 
 
