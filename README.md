@@ -14,17 +14,16 @@ API reference: <https://checkslip.com/docs/reference>
 
 ## Install
 
-```toml
-[dependencies]
-checkslip = "0.2"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```sh
+cargo add checkslip
+cargo add tokio --features "macros rt-multi-thread"
 ```
 
 The minimum supported Rust version is 1.75.
 
 ## Quick start
 
-Create an API key in the Checkslip dashboard. Keys start with `csk_`. Keep the
+Create an API key in the Checkslip web app. Keys start with `csk_`. Keep the
 key out of your source code and pass it in through the environment.
 
 ```rust,no_run
@@ -242,8 +241,8 @@ finishes, including a `PENDING` lookup that resolves later. Messages are
 signed the [Standard Webhooks](https://www.standardwebhooks.com/) way, and the
 `webhooks` feature adds a checker:
 
-```toml
-checkslip = { version = "0.2", features = ["webhooks"] }
+```sh
+cargo add checkslip --features webhooks
 ```
 
 ```rust,no_run
@@ -294,8 +293,8 @@ and call `verify_signature`.
 
 To use the platform TLS library instead of rustls:
 
-```toml
-checkslip = { version = "0.2", default-features = false, features = ["native-tls"] }
+```sh
+cargo add checkslip --no-default-features --features native-tls
 ```
 
 The blocking client runs the async client on a private Tokio runtime. Do not
