@@ -4,6 +4,24 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0](https://github.com/Checkslip/sdk-rust/compare/v0.3.1...v0.4.0) (2026-11-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* ListSlipsParams::free_reason and SlipExportRequest::free_reason are Vec<CustomerFreeReason>, the nine reasons a customer can receive, instead of Vec<FreeReason>. PENDING, NO_CREDIT and HOLD_EXPIRED are not among them, so code that passes one of those no longer compiles. The reason a lookup reports back is unchanged: still FreeReason, including FreeReason::Unknown for a value this version does not know. Counts still take the filter and still ignore it, so nothing changes there.
+* UsageCounts no longer has free_no_credit or free_hold_expired. Both had been returning 0 on every account before this release, and the API has now removed them from UsageCounts. Code that reads either one no longer compiles, so delete those reads. A lookup that was not charged, with no reason given, counts in free_other.
+
+### Features
+
+* the free_reason filter takes the reasons a customer receives ([07da17f](https://github.com/Checkslip/sdk-rust/commit/07da17f61cd3fb773bb7d517a487c9b521c8d9f5))
+* UsageCounts no longer has free_no_credit or free_hold_expired ([4cf0c71](https://github.com/Checkslip/sdk-rust/commit/4cf0c71e8b460d80929b617e8330277342ff5d23))
+
+
+### Bug Fixes
+
+* **docs:** install with cargo add, not a pinned "0.2" ([33d1c51](https://github.com/Checkslip/sdk-rust/commit/33d1c516c06fa2ea1b68acd1fdc6979d754755d0))
+
 ## [0.3.1](https://github.com/Checkslip/sdk-rust/compare/v0.3.0...v0.3.1) (2026-11-10)
 
 
