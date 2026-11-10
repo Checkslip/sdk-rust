@@ -19,7 +19,11 @@ cargo add checkslip
 cargo add tokio --features "macros rt-multi-thread"
 ```
 
-The minimum supported Rust version is 1.75.
+The minimum supported Rust version is 1.80. It was 1.75 through 0.4.0 and
+moved in 0.4.1, so that the `native-tls` feature can take a patched OpenSSL.
+On Rust 1.75 you can stay on 0.4.0, which has the same API, but only with
+the default `rustls-tls`: with `native-tls`, 0.4.0 keeps the OpenSSL this
+release patches.
 
 ## Quick start
 
