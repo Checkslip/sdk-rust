@@ -4,7 +4,7 @@
 
 [English](README.md)
 
-Checkslip ใช้ดึงข้อมูลรายการโอนเงินของธนาคารไทย คุณส่งข้อความใน QR ของสลิป
+Checkslip ดึงข้อมูลรายการโอนเงินของธนาคารไทยจากสลิป คุณส่งข้อความใน QR ของสลิป
 หรือส่งรูปสลิปมา แล้ว Checkslip ไปถามธนาคารผู้โอนว่ามีรายการนั้นหรือไม่
 สิ่งที่ได้กลับไปคือข้อมูลที่ธนาคารมี ได้แก่ ยอดเงิน เวลา ผู้โอน และผู้รับ
 การตัดสินใจว่าจะรับเงินหรือไม่เป็นของคุณ ให้เทียบข้อมูลเหล่านี้กับออเดอร์ของคุณเองก่อน
@@ -13,17 +13,16 @@ Checkslip ใช้ดึงข้อมูลรายการโอนเง�
 
 ## ติดตั้ง
 
-```toml
-[dependencies]
-checkslip = "0.2"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```sh
+cargo add checkslip
+cargo add tokio --features "macros rt-multi-thread"
 ```
 
 ต้องใช้ Rust 1.75 ขึ้นไป
 
 ## เริ่มใช้งาน
 
-ออก API key ในแดชบอร์ด Checkslip (ขึ้นต้นด้วย `csk_`) อย่าเขียน key
+ออก API key ในเว็บแอปของ Checkslip (ขึ้นต้นด้วย `csk_`) อย่าเขียน key
 ลงในซอร์สโค้ด ให้ส่งผ่าน environment variable แทน
 
 ```rust,no_run
@@ -199,8 +198,8 @@ while let Some(record) = found.try_next().await? {
 [Standard Webhooks](https://www.standardwebhooks.com/) เปิด feature `webhooks`
 เพื่อใช้ตัวตรวจลายเซ็น
 
-```toml
-checkslip = { version = "0.2", features = ["webhooks"] }
+```sh
+cargo add checkslip --features webhooks
 ```
 
 ```rust,no_run
@@ -248,8 +247,8 @@ match hook.verify(headers, raw_body)? {
 
 ถ้าจะใช้ TLS ของระบบแทน rustls
 
-```toml
-checkslip = { version = "0.2", default-features = false, features = ["native-tls"] }
+```sh
+cargo add checkslip --no-default-features --features native-tls
 ```
 
 blocking client รัน async client บน Tokio runtime ส่วนตัว ห้ามเรียกจากโค้ด async

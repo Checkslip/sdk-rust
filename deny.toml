@@ -19,6 +19,30 @@ ignore = [
   # not a security one, while the path stays unreachable. Revisit whenever the
   # MSRV moves.
   "RUSTSEC-2026-0009",
+
+  # RUSTSEC-2026-0474, -0476 and -0477 in openssl, which this crate pulls in
+  # only through the optional native-tls feature (the default is rustls, where
+  # openssl is not compiled at all).
+  #
+  # All three are unreachable from here. 0474 is X509Ref::ocsp_responders
+  # returning a &str that may not be UTF-8; 0476 and 0477 are buffer overflows
+  # in AES key wrap with padding, in CipherCtxRef::cipher_update and
+  # cipher_update_inplace. This crate never calls openssl directly, and none of
+  # native-tls 0.2.13, tokio-native-tls 0.3.1 or hyper-tls 0.6.0, the only
+  # crates between us and openssl, mention any of those three functions. I
+  # checked the extracted sources of all three, after first proving the same
+  # grep finds SslConnector where it really is, so the zero is a measurement
+  # and not a missing directory.
+  #
+  # The fix is openssl 0.10.79 for 0474 and 0.10.80 for 0476 and 0477, which
+  # come with openssl-sys 0.9.118 and require rustc 1.80. This crate supports
+  # 1.75, and the msrv job builds --all-features, so taking the fix today means
+  # native-tls callers need 1.80. That is a support decision for pm, not a
+  # security one while the path stays unreachable. Revisit whenever the MSRV
+  # moves, the same condition as RUSTSEC-2026-0009 above.
+  "RUSTSEC-2026-0474",
+  "RUSTSEC-2026-0476",
+  "RUSTSEC-2026-0477",
 ]
 
 [licenses]
