@@ -235,11 +235,12 @@ async fn a_payload_with_unmodelled_fields_still_parses() {
 }
 
 #[test]
-fn usage_counts_parse_with_or_without_the_deprecated_fields() {
-    // The API added free_other, stopped counting free_no_credit and
-    // free_hold_expired, and will drop those two fields. The crate and the
-    // API are deployed separately, so a response from either side of that
-    // change has to parse.
+fn usage_counts_parse_with_or_without_the_dropped_fields() {
+    // The API has dropped free_no_credit and free_hold_expired, so UsageCounts
+    // no longer carries them. The crate and the API are deployed separately,
+    // so an answer that still sends both has to parse rather than fail: the
+    // struct has no deny_unknown_fields, which this test is what holds in
+    // place.
     let full = json!({
         "checks": 12, "charged": 7, "free_not_found": 1, "free_duplicate": 0,
         "free_unavailable": 0, "free_invalid_qr": 0, "free_invalid_file": 0,
@@ -247,9 +248,8 @@ fn usage_counts_parse_with_or_without_the_deprecated_fields() {
         "free_hold_expired": 2, "free_system_error": 0
     });
     let before: UsageCounts =
-        serde_json::from_value(full).expect("the shape with the deprecated fields must parse");
-    assert_eq!(before.free_no_credit, 3);
-    assert_eq!(before.free_hold_expired, 2);
+        serde_json::from_value(full).expect("an answer still carrying the dropped fields must parse");
+    assert_eq!(before.checks, 12);
     assert_eq!(
         before.free_other, 0,
         "a server that predates the field sends no count"
@@ -264,8 +264,6 @@ fn usage_counts_parse_with_or_without_the_deprecated_fields() {
     let after: UsageCounts = serde_json::from_value(trimmed.clone())
         .expect("the shape without the deprecated fields must parse");
     assert_eq!(after.free_other, 5);
-    assert_eq!(after.free_no_credit, 0);
-    assert_eq!(after.free_hold_expired, 0);
 
     // UsageBucket flattens the counts, so the defaults have to survive that too.
     let mut bucket = trimmed;
@@ -273,7 +271,6 @@ fn usage_counts_parse_with_or_without_the_deprecated_fields() {
     let bucket: UsageBucket =
         serde_json::from_value(bucket).expect("a flattened bucket must parse as well");
     assert_eq!(bucket.counts.free_other, 5);
-    assert_eq!(bucket.counts.free_no_credit, 0);
 
     assert_eq!(FreeReason::Other.as_str(), "OTHER");
     assert_eq!(
