@@ -12,8 +12,9 @@ use std::time::Duration;
 use checkslip::time::macros::{date, datetime};
 use checkslip::{
     ApiRequestsParams, Channel, Client, CountBucket, CountSlipsParams, CreateEndpoint,
-    CreateEvidenceExport, FreeReason, LedgerParams, ListDeliveriesParams, ListSlipsParams,
-    LookupRequest, OrdersParams, UpdateEndpoint, UsageBucket, UsageCounts, UsageParams,
+    CreateEvidenceExport, CustomerFreeReason, FreeReason, LedgerParams, ListDeliveriesParams,
+    ListSlipsParams, LookupRequest, OrdersParams, UpdateEndpoint, UsageBucket, UsageCounts,
+    UsageParams,
 };
 use serde_json::json;
 use wiremock::matchers::{method, path};
@@ -234,6 +235,45 @@ async fn a_payload_with_unmodelled_fields_still_parses() {
     assert_eq!(check.outcome, checkslip::Outcome::NotFound);
 }
 
+#[tokio::test]
+async fn the_free_reason_filter_takes_the_reasons_a_customer_receives() {
+    // The API closed this filter to CustomerFreeReason, so the crate offers
+    // that type and not the wider FreeReason it receives. The builder exists
+    // because ListSlipsParams is #[non_exhaustive]: without it an outside
+    // caller cannot reach the field in a chain.
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/slips"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(json!({ "items": [], "next_cursor": null })),
+        )
+        .mount(&server)
+        .await;
+
+    let params = ListSlipsParams::new()
+        .free_reason([CustomerFreeReason::Duplicate, CustomerFreeReason::TooOld]);
+    client(&server)
+        .slips()
+        .list(&params)
+        .await
+        .expect("the narrowed filter must still be accepted");
+
+    let got = &server.received_requests().await.unwrap()[0];
+    let sent: Vec<String> = got
+        .url
+        .query_pairs()
+        .filter(|(k, _)| k == "free_reason")
+        .map(|(_, v)| v.into_owned())
+        .collect();
+    assert_eq!(sent, vec!["DUPLICATE".to_string(), "TOO_OLD".to_string()]);
+
+    // The nine values are the ones a customer can receive. The three that
+    // FreeReason carries on top of them (PENDING, NO_CREDIT, HOLD_EXPIRED)
+    // are not filterable, which is the whole point of the narrower type.
+    assert_eq!(CustomerFreeReason::Other.as_str(), "OTHER");
+    assert_eq!(CustomerFreeReason::SystemError.as_str(), "SYSTEM_ERROR");
+}
+
 #[test]
 fn usage_counts_parse_with_or_without_the_dropped_fields() {
     // The API has dropped free_no_credit and free_hold_expired, so UsageCounts
@@ -247,8 +287,8 @@ fn usage_counts_parse_with_or_without_the_dropped_fields() {
         "free_qr_tampered": 0, "free_too_old": 0, "free_no_credit": 3,
         "free_hold_expired": 2, "free_system_error": 0
     });
-    let before: UsageCounts =
-        serde_json::from_value(full).expect("an answer still carrying the dropped fields must parse");
+    let before: UsageCounts = serde_json::from_value(full)
+        .expect("an answer still carrying the dropped fields must parse");
     assert_eq!(before.checks, 12);
     assert_eq!(
         before.free_other, 0,

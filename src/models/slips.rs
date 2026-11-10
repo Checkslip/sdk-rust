@@ -156,6 +156,41 @@ pub struct SlipCheckRecord {
 }
 
 string_enum! {
+    /// A reason a customer can filter by.
+    ///
+    /// These are the nine reasons the API accepts in a `free_reason` filter,
+    /// which are the ones a customer can receive. [`FreeReason`], the type the
+    /// API sends back, stays wider: it has to carry a value this version of
+    /// the crate does not know.
+    ///
+    /// The `free_reason` filter on counts is not narrowed, because counts
+    /// ignore it: the API answers which filters it applied in
+    /// [`SlipCounts::filters_applied`] and lists the rest in
+    /// `filters_ignored`, where `free_reason` appears. Leave that one alone
+    /// rather than making the two look alike.
+    pub enum CustomerFreeReason {
+        /// Outcome was `NOT_FOUND`.
+        NotFound = "NOT_FOUND",
+        /// Outcome was `DUPLICATE`.
+        Duplicate = "DUPLICATE",
+        /// The bank could not be reached.
+        Unavailable = "UNAVAILABLE",
+        /// The QR could not be read.
+        InvalidQr = "INVALID_QR",
+        /// The image could not be read.
+        InvalidFile = "INVALID_FILE",
+        /// The QR checksum did not match.
+        QrTampered = "QR_TAMPERED",
+        /// The transfer was too old to look up.
+        TooOld = "TOO_OLD",
+        /// Checkslip failed.
+        SystemError = "SYSTEM_ERROR",
+        /// Not charged, and no reason was given.
+        Other = "OTHER",
+    }
+}
+
+string_enum! {
     /// Filter value for whether a lookup used a credit.
     pub enum ChargedFilter {
         /// Used a credit.
@@ -189,8 +224,9 @@ pub struct ListSlipsParams {
     pub after: Option<Uuid>,
     /// Filter by charge state.
     pub charged: Vec<ChargedFilter>,
-    /// Only these free reasons.
-    pub free_reason: Vec<FreeReason>,
+    /// Only these free reasons. The API accepts the nine a customer can
+    /// receive.
+    pub free_reason: Vec<CustomerFreeReason>,
     /// Start of the time range.
     pub from: Option<OffsetDateTime>,
     /// End of the time range.
@@ -222,6 +258,12 @@ impl ListSlipsParams {
     /// Only lookups of this transaction reference.
     pub fn trans_ref(mut self, trans_ref: impl Into<String>) -> Self {
         self.trans_ref = Some(trans_ref.into());
+        self
+    }
+
+    /// Only lookups that used no credit for these reasons.
+    pub fn free_reason(mut self, reasons: impl IntoIterator<Item = CustomerFreeReason>) -> Self {
+        self.free_reason = reasons.into_iter().collect();
         self
     }
 
@@ -425,9 +467,10 @@ pub struct SlipExportRequest {
     /// Filter by charge state.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub charged: Vec<ChargedFilter>,
-    /// Only these free reasons.
+    /// Only these free reasons. The API accepts the nine a customer can
+    /// receive.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub free_reason: Vec<FreeReason>,
+    pub free_reason: Vec<CustomerFreeReason>,
     /// Start of the range.
     #[serde(
         default,
