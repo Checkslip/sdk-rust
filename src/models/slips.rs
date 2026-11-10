@@ -40,8 +40,10 @@ string_enum! {
 string_enum! {
     /// Why a lookup used no credit.
     ///
-    /// A customer receives NOT_FOUND, DUPLICATE, UNAVAILABLE, INVALID_QR, INVALID_FILE, QR_TAMPERED, TOO_OLD, SYSTEM_ERROR and OTHER.
-    /// The other variants exist inside the API and do not reach you.
+    /// A customer receives NOT_FOUND, DUPLICATE, UNAVAILABLE, INVALID_QR,
+    /// INVALID_FILE, QR_TAMPERED, TOO_OLD, SYSTEM_ERROR or OTHER. Any other
+    /// value of this type is never sent to you, so an exhaustive match needs
+    /// a catch-all.
     pub enum FreeReason {
         /// Outcome was `NOT_FOUND`.
         NotFound = "NOT_FOUND",
