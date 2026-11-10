@@ -18,7 +18,8 @@ cargo add checkslip
 cargo add tokio --features "macros rt-multi-thread"
 ```
 
-ต้องใช้ Rust 1.75 ขึ้นไป
+ต้องใช้ Rust 1.80 ขึ้นไป · รุ่น 0.4.0 และก่อนนั้นใช้ 1.75 แล้วขยับใน 0.4.1
+เพื่อให้ feature `native-tls` ใช้ OpenSSL รุ่นที่ปิดช่องโหว่แล้วได้
 
 ## เริ่มใช้งาน
 
