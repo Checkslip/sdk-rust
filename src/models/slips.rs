@@ -109,7 +109,7 @@ string_enum! {
     pub enum LookupChannel {
         /// An API key.
         Api = "API",
-        /// The web dashboard.
+        /// The Checkslip web app.
         Dashboard = "DASHBOARD",
         /// The Checkslip assistant.
         Assistant = "ASSISTANT",
