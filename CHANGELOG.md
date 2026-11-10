@@ -4,6 +4,17 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1](https://github.com/Checkslip/sdk-rust/compare/v0.4.0...v0.4.1) (2026-11-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* The minimum supported Rust version moves from 1.75 to 1.80, to pick up the fix for three OpenSSL advisories: RUSTSEC-2026-0474, RUSTSEC-2026-0476 and RUSTSEC-2026-0477. They concern the OpenSSL that the optional native-tls feature pulls in, and the functions they name are not reachable from this crate or the crates it pulls in, so this is about not shipping a flagged dependency rather than a vulnerability reachable in your build. Upgrading keeps your own cargo-deny or cargo audit from flagging this crate. This goes out as a patch, 0.4.1, even though moving the minimum is a break for anyone on an older toolchain. On Rust 1.75 you can stay on 0.4.0, which has the same API, but only with the default rustls-tls: with native-tls, 0.4.0 keeps the OpenSSL this release patches.
+
+### Bug Fixes
+
+* the minimum supported Rust version is 1.80, for a patched OpenSSL ([b68f5dc](https://github.com/Checkslip/sdk-rust/commit/b68f5dcb73b5d5e76b29487207d4fa8e551bfb71))
+
 ## [0.4.0](https://github.com/Checkslip/sdk-rust/compare/v0.3.1...v0.4.0) (2026-11-10)
 
 
