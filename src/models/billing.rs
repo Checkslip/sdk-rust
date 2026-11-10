@@ -431,27 +431,16 @@ pub struct UsageCounts {
     pub free_qr_tampered: u64,
     /// Free: transfer too old.
     pub free_too_old: u64,
-    /// Free: no credit.
-    ///
-    /// The API no longer counts this reason. It is always 0, and the field
-    /// is going away: these lookups are counted in
-    /// [`UsageCounts::free_other`]. Reading it stays safe either way,
-    /// because an absent field reads as 0.
-    #[serde(default)]
-    pub free_no_credit: u64,
-    /// Free: credit hold expired.
-    ///
-    /// Going away with [`UsageCounts::free_no_credit`], and counted in
-    /// [`UsageCounts::free_other`] the same way.
-    #[serde(default)]
-    pub free_hold_expired: u64,
     /// Free: Checkslip error.
     pub free_system_error: u64,
     /// Free: not charged, no reason given.
     ///
-    /// This counts the two deprecated reasons above and any reason this
-    /// version of the crate does not know. It reads as 0 against a server
-    /// that does not send the field yet.
+    /// This counts any reason this version of the crate does not know. It
+    /// reads as 0 against a server that does not send the field yet.
+    ///
+    /// The API used to also return `free_no_credit` and `free_hold_expired`.
+    /// Both had been returning 0 on every account, and those lookups count
+    /// here.
     #[serde(default)]
     pub free_other: u64,
 }
