@@ -9,7 +9,7 @@ Include what you found, the crate version, and the steps or code that show
 it. We reply within three working days and keep you posted until it is fixed.
 
 If the report involves an API key or a webhook signing secret, do not send the
-real value. Revoke it in the dashboard and tell us which key it was by its ID.
+real value. Revoke it in the web app and tell us which key it was by its ID.
 
 ## Supported versions
 
