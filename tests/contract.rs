@@ -12,9 +12,9 @@ use std::time::Duration;
 use checkslip::time::macros::{date, datetime};
 use checkslip::{
     ApiRequestsParams, Channel, Client, CountBucket, CountSlipsParams, CreateEndpoint,
-    CreateEvidenceExport, CustomerFreeReason, FreeReason, LedgerParams, ListDeliveriesParams,
-    ListSlipsParams, LookupRequest, OrdersParams, UpdateEndpoint, UsageBucket, UsageCounts,
-    UsageParams,
+    CreateEvidenceExport, CustomerFreeReason, DisabledReason, Endpoint, FreeReason, LedgerParams,
+    ListDeliveriesParams, ListSlipsParams, LookupRequest, OrdersParams, UpdateEndpoint,
+    UsageBucket, UsageCounts, UsageParams,
 };
 use serde_json::json;
 use wiremock::matchers::{method, path};
@@ -372,4 +372,30 @@ async fn audit_request_filters_repeat_the_key_for_each_value() {
             "missing {expected:?} in {pairs:?}"
         );
     }
+}
+
+/// An endpoint the Checkslip team turned off decodes to `DisabledReason::Staff`,
+/// and a reason this release has no variant for still reaches the caller as the
+/// raw string, which is what `DisabledReason`'s doc promises.
+#[test]
+fn endpoint_disabled_reason_carries_staff_and_an_unknown_reason() {
+    fn endpoint(reason: &str) -> Endpoint {
+        let body = format!(
+            r#"{{"id":"ep_1","url":"https://shop.test/hooks","description":null,
+               "event_types":["slip.checked"],"enabled":false,"disabled_reason":"{reason}",
+               "secret_hint":"…a1b2","previous_secret_expires_at":null,
+               "created_at":"2026-11-01T00:00:00Z","updated_at":"2026-11-01T00:00:00Z"}}"#
+        );
+        serde_json::from_str(&body).expect("an endpoint must decode whatever reason the API sends")
+    }
+
+    assert_eq!(
+        endpoint("STAFF").disabled_reason,
+        Some(DisabledReason::Staff)
+    );
+    assert_eq!(DisabledReason::Staff.as_str(), "STAFF");
+    assert_eq!(
+        endpoint("SOMETHING_ADDED_LATER").disabled_reason,
+        Some(DisabledReason::Unknown("SOMETHING_ADDED_LATER".to_owned())),
+    );
 }

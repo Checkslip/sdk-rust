@@ -20,7 +20,13 @@ string_enum! {
 }
 
 string_enum! {
-    /// Why an endpoint is disabled.
+    /// Why a webhook endpoint is off.
+    ///
+    /// MANUAL means you turned it off, GONE that your system answered 410, and
+    /// FAILING that every send failed for 5 days in a row. STAFF means the
+    /// Checkslip team turned it off, and you cannot turn it back on yourself, so
+    /// open a case. The API can add a reason later, and an unknown one reaches you
+    /// as the raw string, so an exhaustive match needs a catch-all.
     pub enum DisabledReason {
         /// Someone turned it off.
         Manual = "MANUAL",
@@ -28,6 +34,8 @@ string_enum! {
         Gone = "GONE",
         /// Deliveries kept failing.
         Failing = "FAILING",
+        /// The Checkslip team turned it off.
+        Staff = "STAFF",
     }
 }
 
