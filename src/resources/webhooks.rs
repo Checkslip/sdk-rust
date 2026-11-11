@@ -105,7 +105,16 @@ impl Endpoints {
             .await
     }
 
+    // The "Reply to the email" sentence below is copied word for word from the
+    // contract's fix for ENDPOINT_DISABLED_BY_STAFF, so a customer reading this
+    // doc and a customer reading the error body see the same words. If the
+    // contract changes it, follow the contract. The sdk workspace's
+    // scripts/check-problem-text.py compares the two.
     /// Changes an endpoint. Only the fields you set change.
+    ///
+    /// Setting enabled to true fails with 409 ENDPOINT_DISABLED_BY_STAFF if the
+    /// Checkslip team turned the endpoint off. Reply to the email about it, or
+    /// open a case to have it turned on.
     pub async fn update(&self, endpoint_id: &str, patch: &UpdateEndpoint) -> Result<Endpoint> {
         let spec = RequestSpec::new(Method::PATCH, &path(&[endpoint_id]))
             .json_as(patch, "application/merge-patch+json")?;
