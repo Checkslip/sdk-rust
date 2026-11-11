@@ -4,6 +4,17 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0](https://github.com/Checkslip/sdk-rust/compare/v0.4.1...v0.5.0) (2026-11-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* a STAFF endpoint used to read back as DisabledReason::Unknown("STAFF"). It now reads back as DisabledReason::Staff, so an arm that matched the unknown string stops firing for it.
+
+### Features
+
+* disabled_reason can say STAFF ([1c2678f](https://github.com/Checkslip/sdk-rust/commit/1c2678ffbe11dcc7cfd1fa4ddd030e175ad87434))
+
 ## [0.4.1](https://github.com/Checkslip/sdk-rust/compare/v0.4.0...v0.4.1) (2026-11-10)
 
 
