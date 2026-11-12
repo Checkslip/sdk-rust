@@ -12,9 +12,9 @@ use std::time::Duration;
 use checkslip::time::macros::{date, datetime};
 use checkslip::{
     ApiRequestsParams, Channel, Client, CountBucket, CountSlipsParams, CreateEndpoint,
-    CreateEvidenceExport, CustomerFreeReason, DisabledReason, Endpoint, FreeReason, LedgerParams,
-    ListDeliveriesParams, ListSlipsParams, LookupRequest, OrdersParams, UpdateEndpoint,
-    UsageBucket, UsageCounts, UsageParams,
+    CreateEvidenceExport, CreditEntry, CreditReason, CustomerFreeReason, DisabledReason, Endpoint,
+    FreeReason, LedgerParams, ListDeliveriesParams, ListSlipsParams, LookupRequest, OrdersParams,
+    UpdateEndpoint, UsageBucket, UsageCounts, UsageParams,
 };
 use serde_json::json;
 use wiremock::matchers::{method, path};
@@ -397,5 +397,32 @@ fn endpoint_disabled_reason_carries_staff_and_an_unknown_reason() {
     assert_eq!(
         endpoint("SOMETHING_ADDED_LATER").disabled_reason,
         Some(DisabledReason::Unknown("SOMETHING_ADDED_LATER".to_owned())),
+    );
+}
+
+/// A ledger entry written when staff restore an account decodes to
+/// `AccountRestored`, and a reason this release has no variant for still
+/// reaches the caller as the raw string. The billing contract calls
+/// `CreditReason` an open set, so a value added later must not fail the decode.
+#[test]
+fn credit_reason_carries_account_restored_and_an_unknown_reason() {
+    fn entry(reason: &str) -> CreditEntry {
+        let body = format!(
+            r#"{{"id":"0193a1f0-0000-7000-8000-000000000001","delta":50,
+               "balance_after":50,"expires_at_after":null,"reason":"{reason}",
+               "free_reason":null,"ref_type":"STAFF","ref_id":null,
+               "created_at":"2026-11-12T00:00:00Z"}}"#
+        );
+        serde_json::from_str(&body).expect("an entry must decode whatever reason the API sends")
+    }
+
+    assert_eq!(
+        entry("ACCOUNT_RESTORED").reason,
+        CreditReason::AccountRestored
+    );
+    assert_eq!(CreditReason::AccountRestored.as_str(), "ACCOUNT_RESTORED");
+    assert_eq!(
+        entry("SOMETHING_ADDED_LATER").reason,
+        CreditReason::Unknown("SOMETHING_ADDED_LATER".to_owned()),
     );
 }
