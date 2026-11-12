@@ -250,11 +250,17 @@ impl SlipExports {
     /// Starts a CSV export of lookup history. Small exports come back
     /// `READY`; larger ones are `QUEUED` and you poll
     /// [`get`](Self::get).
+    ///
+    /// Not available yet: the API does not accept this request, so calling it
+    /// returns an error.
     pub async fn create(&self, req: &SlipExportRequest) -> Result<SlipExport> {
         let spec = RequestSpec::new(Method::POST, &["api", "slips", "exports"]).json(req)?;
         self.client.send_json(spec).await
     }
     /// The state of a CSV export.
+    ///
+    /// Not available yet: the API does not accept this request, so calling it
+    /// returns an error.
     pub async fn get(&self, export_id: Uuid) -> Result<SlipExport> {
         self.client
             .get_json(
@@ -264,6 +270,9 @@ impl SlipExports {
             .await
     }
     /// Downloads one CSV part of a `READY` export.
+    ///
+    /// Not available yet: the API does not accept this request, so calling it
+    /// returns an error.
     pub async fn download_part(&self, export_id: Uuid, part: &ExportPart) -> Result<Bytes> {
         let sig = url::Url::parse(&part.url)
             .ok()
