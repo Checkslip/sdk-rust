@@ -48,7 +48,10 @@ async fn main() -> checkslip::Result<()> {
             let slip = check.slip.as_full().expect("FOUND มีข้อมูลเต็ม");
             println!("{} สตางค์ จาก {}", slip.amount.satang, slip.sender.bank.code);
         }
-        Outcome::Duplicate => println!("บัญชีนี้เคยดึงรายการนี้แล้ว"),
+        Outcome::Duplicate => println!(
+            "ตรวจใบนี้ไปแล้ว ครั้งแรกเมื่อ {}",
+            check.duplicate_of.expect("DUPLICATE มี duplicate_of").checked_at
+        ),
         Outcome::NotFound => println!("ธนาคารไม่มีรายการตามเลขอ้างอิงนี้"),
         Outcome::Pending => println!("ธนาคารยังไม่ขึ้นรายการ"),
         other => println!("ผล {other}"),
