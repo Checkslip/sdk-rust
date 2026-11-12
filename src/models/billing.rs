@@ -94,6 +94,10 @@ string_enum! {
         StaffAdjust = "STAFF_ADJUST",
         /// The account was deleted.
         AccountDeleted = "ACCOUNT_DELETED",
+        /// Staff restored the account, and the credits the deletion took came
+        /// back, keeping the expiry they already had. Credits already past that
+        /// expiry are taken again by the next EXPIRE entry.
+        AccountRestored = "ACCOUNT_RESTORED",
         /// Development grant.
         DevGrant = "DEV_GRANT",
     }
