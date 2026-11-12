@@ -22,7 +22,10 @@
 //!         let amount = check.slip.amount().map(|m| m.satang);
 //!         println!("bank has the transfer, amount in satang: {amount:?}");
 //!     }
-//!     Outcome::Duplicate => println!("you looked this one up before"),
+//!     Outcome::Duplicate => println!(
+//!         "already checked this slip, first at {}",
+//!         check.duplicate_of.expect("DUPLICATE carries duplicate_of").checked_at
+//!     ),
 //!     Outcome::NotFound => println!("the bank has no such transfer"),
 //!     Outcome::Pending => println!("not posted yet; a webhook will follow"),
 //!     other => println!("outcome {other}"),

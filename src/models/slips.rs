@@ -19,7 +19,8 @@ string_enum! {
         Found = "FOUND",
         /// The bank has no transfer with this reference.
         NotFound = "NOT_FOUND",
-        /// This account already looked up this transfer; see `duplicate_of`.
+        /// This account already looked this transfer up and found it, within
+        /// the time we keep transfer references; see `duplicate_of`.
         Duplicate = "DUPLICATE",
         /// The bank has not posted the transfer yet. Checkslip keeps asking
         /// and sends a `slip.checked` webhook when it knows.
@@ -96,7 +97,7 @@ pub struct SlipCheck {
     pub checked_at: OffsetDateTime,
     /// The transfer data.
     pub slip: SlipData,
-    /// The earlier lookup, when `outcome` is `DUPLICATE`.
+    /// The check that first found this transfer, when `outcome` is `DUPLICATE`.
     #[serde(default)]
     pub duplicate_of: Option<DuplicateOf>,
     /// Your own reference, echoed back.
@@ -138,7 +139,7 @@ pub struct SlipCheckRecord {
     /// Transfer data, when there is any.
     #[serde(default)]
     pub slip: Option<SlipData>,
-    /// The earlier lookup, for duplicates.
+    /// The check that first found this transfer, for duplicates.
     #[serde(default)]
     pub duplicate_of: Option<DuplicateOf>,
     /// Your own reference.

@@ -447,7 +447,7 @@ pub struct SlipCheckedData {
     /// Transfer data.
     #[serde(default)]
     pub slip: Option<SlipData>,
-    /// The earlier lookup, for duplicates.
+    /// The check that first found this transfer, for duplicates.
     #[serde(default)]
     pub duplicate_of: Option<DuplicateOf>,
     /// `true` when this lookup was `PENDING` first and has now resolved.

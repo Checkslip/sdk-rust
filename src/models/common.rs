@@ -168,13 +168,13 @@ impl SlipData {
     }
 }
 
-/// Points at the earlier lookup of the same transfer on this account.
+/// Points at the check that first found this transfer in this account.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct DuplicateOf {
-    /// `request_id` of the earlier lookup.
+    /// `request_id` of that check.
     pub request_id: Uuid,
-    /// When the earlier lookup ran.
+    /// When that check ran.
     #[serde(with = "time::serde::rfc3339")]
     pub checked_at: OffsetDateTime,
 }
