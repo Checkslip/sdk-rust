@@ -4,6 +4,18 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0](https://github.com/Checkslip/sdk-rust/compare/v0.5.0...v0.6.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* ACCOUNT_RESTORED used to read back as CreditReason::Unknown("ACCOUNT_RESTORED"). It now reads back as CreditReason::AccountRestored, so an arm that matched the unknown string stops firing for it.
+
+### Features
+
+* a credit entry's reason can say ACCOUNT_RESTORED ([e266116](https://github.com/Checkslip/sdk-rust/commit/e2661160039cfba80b680612bb0f13418d8b8782))
+* a credit entry's reason can say ACCOUNT_RESTORED ([233960e](https://github.com/Checkslip/sdk-rust/commit/233960e9cdd89cde7421981605772149b7979446))
+
 ## [0.5.0](https://github.com/Checkslip/sdk-rust/compare/v0.4.1...v0.5.0) (2026-11-11)
 
 
