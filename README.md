@@ -50,7 +50,10 @@ async fn main() -> checkslip::Result<()> {
             let slip = check.slip.as_full().expect("FOUND carries the full record");
             println!("{} satang from {}", slip.amount.satang, slip.sender.bank.code);
         }
-        Outcome::Duplicate => println!("this account looked it up before"),
+        Outcome::Duplicate => println!(
+            "already checked this slip, first at {}",
+            check.duplicate_of.expect("DUPLICATE carries duplicate_of").checked_at
+        ),
         Outcome::NotFound => println!("the bank has no transfer with this reference"),
         Outcome::Pending => println!("the bank has not posted it yet"),
         other => println!("outcome {other}"),
