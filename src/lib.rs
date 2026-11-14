@@ -27,7 +27,6 @@
 //!         check.duplicate_of.expect("DUPLICATE carries duplicate_of").checked_at
 //!     ),
 //!     Outcome::NotFound => println!("the bank has no such transfer"),
-//!     Outcome::Pending => println!("not posted yet; a webhook will follow"),
 //!     other => println!("outcome {other}"),
 //! }
 //! # Ok(())
