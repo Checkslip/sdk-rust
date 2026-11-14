@@ -68,6 +68,7 @@
 mod macros;
 
 mod client;
+mod dates;
 mod error;
 pub mod models;
 mod pagination;
@@ -86,6 +87,7 @@ pub use client::{
     new_idempotency_key, Client, ClientBuilder, DEFAULT_BASE_URL, DEFAULT_MAX_RETRIES,
     DEFAULT_TIMEOUT,
 };
+pub use dates::day;
 pub use error::{Error, FieldError, Problem, Result};
 pub use models::*;
 pub use pagination::ItemStream;
