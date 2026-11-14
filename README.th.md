@@ -53,7 +53,6 @@ async fn main() -> checkslip::Result<()> {
             check.duplicate_of.expect("DUPLICATE มี duplicate_of").checked_at
         ),
         Outcome::NotFound => println!("ธนาคารไม่มีรายการตามเลขอ้างอิงนี้"),
-        Outcome::Pending => println!("ธนาคารยังไม่ขึ้นรายการ"),
         other => println!("ผล {other}"),
     }
     Ok(())
