@@ -4,6 +4,14 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1](https://github.com/Checkslip/sdk-rust/compare/v0.6.0...v0.6.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* **docs:** PENDING is not returned; you get a 503 UNAVAILABLE error ([129ff12](https://github.com/Checkslip/sdk-rust/commit/129ff1235f55486ef7cd52e76842150e8b0e97bb))
+* **docs:** the README usage example compiles with checkslip alone ([45f4eea](https://github.com/Checkslip/sdk-rust/commit/45f4eeadff57e05769eb6be202d63c5b4f562c1a))
+
 ## [0.6.0](https://github.com/Checkslip/sdk-rust/compare/v0.5.0...v0.6.0) (2026-11-12)
 
 
