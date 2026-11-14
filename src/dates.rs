@@ -15,7 +15,7 @@ use crate::{Error, Result};
 /// ```
 /// use checkslip::time::{Date, Month};
 /// let from = Date::from_calendar_date(2026, Month::November, 1)
-///     .expect("1 November 2026 is a real day");
+///     .expect("1 November 2026 exists");
 /// # let _ = from;
 /// ```
 ///
