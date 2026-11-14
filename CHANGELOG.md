@@ -4,6 +4,21 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0](https://github.com/Checkslip/sdk-rust/compare/v0.6.1...v0.7.0) (2026-11-14)
+
+
+### Features
+
+* BillingInfo can be built with new() and one method per field ([9fa5fd9](https://github.com/Checkslip/sdk-rust/commit/9fa5fd912ef527b186bbbd62ff048db02978f5e1))
+* day(2026, 11, 1) builds a day without importing time types ([a4d6442](https://github.com/Checkslip/sdk-rust/commit/a4d644263b4fb98e57f205526d2ed8936b646890))
+
+
+### Bug Fixes
+
+* **docs:** the crate docs no longer promise a recheck and a webhook ([c9e98bb](https://github.com/Checkslip/sdk-rust/commit/c9e98bb3663c745f4f6549fea674a26503065190))
+* **docs:** the Thai quick start no longer matches on PENDING ([cbbb082](https://github.com/Checkslip/sdk-rust/commit/cbbb0829b40810cc9dcecfe372d3bfd1963ea372))
+* **docs:** the webhook docs stop describing the cancelled recheck ([0c72eca](https://github.com/Checkslip/sdk-rust/commit/0c72eca80e53e977382c9d3d060acbe4f8b2dd11))
+
 ## [0.6.1](https://github.com/Checkslip/sdk-rust/compare/v0.6.0...v0.6.1) (2026-11-14)
 
 
