@@ -4,6 +4,13 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0](https://github.com/Checkslip/sdk-rust/compare/v0.7.0...v0.8.0) (2026-11-14)
+
+
+### Features
+
+* Order::vat, Package::price_total and the two other VAT fields ([29a814a](https://github.com/Checkslip/sdk-rust/commit/29a814a5b54b3b6bbf77947d51328dc87a497df4))
+
 ## [0.7.0](https://github.com/Checkslip/sdk-rust/compare/v0.6.1...v0.7.0) (2026-11-14)
 
 
