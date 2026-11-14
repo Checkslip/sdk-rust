@@ -244,7 +244,7 @@ fails, the stream yields that error and ends.
 ## Webhooks
 
 Checkslip sends a `slip.checked` message to your endpoint when a lookup
-finishes, including a `PENDING` lookup that resolves later. Messages are
+finishes. Messages are
 signed the [Standard Webhooks](https://www.standardwebhooks.com/) way, and the
 `webhooks` feature adds a checker:
 
