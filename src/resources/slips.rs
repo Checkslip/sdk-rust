@@ -138,10 +138,12 @@ impl Slips {
 
     /// Asks the sending bank for the transfer behind a slip.
     ///
-    /// Check `outcome` on the result. Only `FOUND` uses a credit. On
-    /// `PENDING` the bank has not posted the transfer yet; Checkslip keeps
-    /// asking and sends a `slip.checked` webhook, or you can call
-    /// [`get`](Self::get) with the `request_id` later.
+    /// Check `outcome` on the result: today `FOUND`, `NOT_FOUND` or
+    /// `DUPLICATE`. Only `FOUND` uses a credit. A lookup is answered in one
+    /// call, so when the bank does not show the transfer you get a 503
+    /// `UNAVAILABLE` error.
+    ///
+    /// [`get`](Self::get) reads a past lookup again by `request_id`.
     ///
     /// Checkslip reports what the bank has. Whether that matches your order
     /// (amount, receiver, time) is for your code to decide.

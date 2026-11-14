@@ -53,7 +53,6 @@ async fn main() -> checkslip::Result<()> {
             check.duplicate_of.expect("DUPLICATE มี duplicate_of").checked_at
         ),
         Outcome::NotFound => println!("ธนาคารไม่มีรายการตามเลขอ้างอิงนี้"),
-        Outcome::Pending => println!("ธนาคารยังไม่ขึ้นรายการ"),
         other => println!("ผล {other}"),
     }
     Ok(())
@@ -61,6 +60,10 @@ async fn main() -> checkslip::Result<()> {
 ```
 
 หักเครดิตเฉพาะเมื่อผลเป็น `FOUND`
+
+การตรวจสอบรายการโอนกับธนาคารจบในครั้งเดียว `lookup` จึงไม่คืน `Outcome::Pending` ·
+ถ้าธนาคารยังไม่แสดงรายการ จะได้ error 503 `UNAVAILABLE` แทน · ค่านี้ยังอยู่ใน enum
+โค้ดเดิมจึงยัง compile ได้
 
 ถ้าลูกค้าอัปโหลดรูปสลิป (JPEG, PNG หรือ WebP ไม่เกิน 10 MB) ส่งไบต์ของรูปได้เลย
 ไลบรารีส่งเป็น `multipart/form-data` และดูชนิดไฟล์จากส่วนหัวของไฟล์ให้
