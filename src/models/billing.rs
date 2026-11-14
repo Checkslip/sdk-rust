@@ -1,3 +1,5 @@
+// qa-customer-text: the doc comments reach docs.rs, including the receipt
+// details a customer fills in and what a PUT replaces.
 use serde::{Deserialize, Serialize};
 use time::{Date, OffsetDateTime};
 use uuid::Uuid;
@@ -75,6 +77,66 @@ pub struct BillingInfo {
     /// Email for receipts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+}
+
+impl BillingInfo {
+    /// Returns empty billing details, to fill in with the methods on this type.
+    ///
+    /// The struct is `#[non_exhaustive]`, so code outside the crate cannot
+    /// write it as a struct literal; `new()` and these methods take its place.
+    ///
+    /// ```
+    /// use checkslip::{BillingInfo, BuyerType};
+    ///
+    /// let info = BillingInfo::new()
+    ///     .buyer_type(BuyerType::Company)
+    ///     .name("ACME")
+    ///     .tax_id("0105555555555")
+    ///     .email("billing@example.com");
+    /// # let _ = info;
+    /// ```
+    ///
+    /// `PUT /api/billing/billing-info` replaces the whole object, so send
+    /// every field you want kept, not only the ones you are changing.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Person or company.
+    pub fn buyer_type(mut self, buyer_type: BuyerType) -> Self {
+        self.buyer_type = Some(buyer_type);
+        self
+    }
+
+    /// Name on the receipt.
+    pub fn name(mut self, name: impl Into<String>) -> Self {
+        self.name = Some(name.into());
+        self
+    }
+
+    /// 13-digit tax ID.
+    pub fn tax_id(mut self, tax_id: impl Into<String>) -> Self {
+        self.tax_id = Some(tax_id.into());
+        self
+    }
+
+    /// Branch.
+    pub fn branch(mut self, branch: impl Into<String>) -> Self {
+        self.branch = Some(branch.into());
+        self
+    }
+
+    /// Address.
+    pub fn address(mut self, address: impl Into<String>) -> Self {
+        self.address = Some(address.into());
+        self
+    }
+
+    /// Email for receipts.
+    pub fn email(mut self, email: impl Into<String>) -> Self {
+        self.email = Some(email.into());
+        self
+    }
 }
 
 string_enum! {
