@@ -63,6 +63,11 @@ async fn main() -> checkslip::Result<()> {
 
 Only `FOUND` uses a credit.
 
+A lookup is answered in one call, so `lookup` does not return
+`Outcome::Pending`. When the bank does not show the transfer you get a 503
+`UNAVAILABLE` error. The value stays in the enum, so existing code still
+compiles.
+
 To look up from the image a customer uploaded (JPEG, PNG or WebP, up to
 10 MB), pass the bytes. The client sends them as `multipart/form-data` and
 works out the content type from the file header:
