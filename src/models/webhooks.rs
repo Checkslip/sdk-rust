@@ -11,7 +11,8 @@ use crate::query::{push_opt, push_time, Query};
 string_enum! {
     /// A webhook event type.
     pub enum EventType {
-        /// A lookup finished, including a `PENDING` lookup that resolved later.
+        /// A lookup finished, whatever the outcome, including `NOT_FOUND`
+        /// and `DUPLICATE`.
         SlipChecked = "slip.checked",
         /// A test message sent with
         /// [`Endpoints::send_test`](crate::resources::Endpoints::send_test).
@@ -450,7 +451,10 @@ pub struct SlipCheckedData {
     /// The check that first found this transfer, for duplicates.
     #[serde(default)]
     pub duplicate_of: Option<DuplicateOf>,
-    /// `true` when this lookup was `PENDING` first and has now resolved.
+    /// Always `false` today: a lookup is answered in one call, so no lookup
+    /// is `PENDING` first. The field stays, and stays required, so code that
+    /// reads it keeps working. `true` used to mean this lookup came back
+    /// `PENDING` and this is its final answer.
     #[serde(default)]
     pub resolved_after_pending: bool,
 }

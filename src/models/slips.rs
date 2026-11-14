@@ -55,6 +55,9 @@ string_enum! {
         /// Outcome was `DUPLICATE`.
         Duplicate = "DUPLICATE",
         /// Outcome was `PENDING`.
+        ///
+        /// The API never sends this reason: a lookup is answered in one call,
+        /// so no lookup is `PENDING`.
         Pending = "PENDING",
         /// Outcome was `UNAVAILABLE` (there is no definite answer from the
         /// banking system right now).
