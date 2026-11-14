@@ -13,10 +13,15 @@ cargo test --all-features
 cargo clippy --all-features --all-targets -- -D warnings
 cargo fmt --check
 cargo +1.75 check --all-features    # the MSRV gate
+scripts/readme-outside-crate.sh     # the README, as a reader's project sees it
 ```
 
 The README examples are compiled as doctests, so a rename that misses the
-README fails the build.
+README fails the build. Those doctests compile inside the crate, where `time`
+and `uuid` are dependencies that someone who ran `cargo add checkslip` does not
+have, so the script above compiles the same blocks again with only the
+dependencies the README asks a reader to install. CI runs it on every pull
+request.
 
 No test talks to the live API. They run against a local wiremock server and
 recorded fixtures, so you need no API key and nothing is charged.
