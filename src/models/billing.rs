@@ -276,6 +276,12 @@ pub struct Order {
     pub credits: u64,
     /// Price.
     pub amount: Money,
+    /// The VAT already inside `amount`, fixed when the order was made.
+    ///
+    /// Do not add it to `amount`: `amount` is what the order asks for. It is
+    /// `None` when the order carries no VAT.
+    #[serde(default)]
+    pub vat: Option<Money>,
     /// How it was paid, once paid.
     #[serde(default)]
     pub payment_method: Option<PaymentMethod>,
@@ -333,8 +339,23 @@ pub struct Package {
     pub name_en: String,
     /// Price.
     pub price: Money,
+    /// What a customer pays for this package now: `price` plus VAT when VAT
+    /// is in effect and prices exclude it; otherwise it is the same as
+    /// `price`.
+    ///
+    /// An order opened now asks for this amount, so show this one as the
+    /// price to pay.
+    pub price_total: Money,
     /// Price of one credit.
     pub price_per_credit: Money,
+    /// The same price per credit, in baht, as text with three decimals,
+    /// rounded half up at a tenth of a satang.
+    ///
+    /// Two packages that tie at a whole satang differ here (0.175 against
+    /// 0.167). Show it as sent rather than working it out from `price` and
+    /// `credits`. Like `price_per_credit` it divides `price`, not
+    /// `price_total`, so it excludes VAT whenever `price` does.
+    pub price_per_credit_baht: String,
     /// Credits included.
     pub credits: u64,
     /// Days until the credits expire.
@@ -353,6 +374,9 @@ pub struct PackageList {
     pub items: Vec<Package>,
     /// Whether prices include VAT.
     pub prices_include_vat: bool,
+    /// The VAT rate in force now, in basis points: 700 is 7%, and 0 means no
+    /// VAT applies anywhere yet. Read it to find out whether VAT is in effect.
+    pub vat_rate_bp: u32,
     /// Whether checkout is open.
     pub checkout_open: bool,
 }

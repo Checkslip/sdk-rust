@@ -160,8 +160,21 @@ async fn the_package_list_keeps_its_envelope() {
     Mock::given(method("GET"))
         .and(path("/api/billing/packages"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-            "items": [],
+            "items": [{
+                "code": "pro",
+                "name_th": "โปร",
+                "name_en": "Pro",
+                "price": { "satang": 19900, "currency": "THB" },
+                "price_total": { "satang": 21293, "currency": "THB" },
+                "price_per_credit": { "satang": 199, "currency": "THB" },
+                "price_per_credit_baht": "1.990",
+                "credits": 100,
+                "validity_days": 365,
+                "for_sale": true,
+                "sort": 1
+            }],
             "prices_include_vat": true,
+            "vat_rate_bp": 700,
             "checkout_open": false
         })))
         .mount(&server)
@@ -170,6 +183,70 @@ async fn the_package_list_keeps_its_envelope() {
     let packages = client(&server).billing().packages().list().await.unwrap();
     assert!(packages.prices_include_vat);
     assert!(!packages.checkout_open);
+    // The VAT numbers are read, never worked out: a caller who multiplies or
+    // adds instead of reading them is the mistake these fields prevent.
+    assert_eq!(packages.vat_rate_bp, 700);
+    assert_eq!(packages.items[0].price_total.satang, 21293);
+    assert_eq!(packages.items[0].price_per_credit_baht, "1.990");
+}
+
+#[tokio::test]
+async fn an_order_carries_the_vat_inside_its_amount() {
+    let server = MockServer::start().await;
+    let id = "0192d4e0-7c1a-7b3e-9f00-1a2b3c4d5e6f";
+    Mock::given(method("GET"))
+        .and(path(format!("/api/billing/orders/{id}")))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "id": id,
+            "status": "PAID",
+            "package_code": "pro",
+            "package_name_th": "โปร",
+            "credits": 100,
+            "amount": { "satang": 19900, "currency": "THB" },
+            "vat": { "satang": 1302, "currency": "THB" },
+            "created_at": "2026-11-01T00:00:00Z"
+        })))
+        .mount(&server)
+        .await;
+
+    let order = client(&server)
+        .billing()
+        .orders()
+        .get(id.parse().unwrap())
+        .await
+        .unwrap();
+    // 13.02 is the VAT within 199.00, not a surcharge on it, which is what
+    // the field's documentation promises.
+    assert_eq!(order.amount.satang, 19900);
+    assert_eq!(order.vat.as_ref().map(|m| m.satang), Some(1302));
+}
+
+#[tokio::test]
+async fn an_order_without_vat_leaves_the_field_empty() {
+    let server = MockServer::start().await;
+    let id = "0192d4e0-7c1a-7b3e-9f00-1a2b3c4d5e70";
+    Mock::given(method("GET"))
+        .and(path(format!("/api/billing/orders/{id}")))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "id": id,
+            "status": "PAID",
+            "package_code": "nano",
+            "package_name_th": "นาโน",
+            "credits": 1,
+            "amount": { "satang": 100, "currency": "THB" },
+            "created_at": "2026-11-01T00:00:00Z"
+        })))
+        .mount(&server)
+        .await;
+
+    let order = client(&server)
+        .billing()
+        .orders()
+        .get(id.parse().unwrap())
+        .await
+        .unwrap();
+    // `None` rather than zero, so a caller can tell "no VAT" from "zero VAT".
+    assert!(order.vat.is_none());
 }
 
 #[tokio::test]
