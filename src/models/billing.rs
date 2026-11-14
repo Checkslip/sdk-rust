@@ -354,12 +354,13 @@ pub struct Package {
     /// Read the amount to pay from `price_total`; do not multiply this by
     /// `credits` to get it.
     pub price_per_credit: Money,
-    /// The price of one credit in baht with 3 decimals, from `price` divided
-    /// by `credits`, so it excludes VAT when
-    /// [`PackageList::prices_include_vat`] is false.
+    /// The same price per credit as `price_per_credit`, in baht, as display
+    /// text with three decimals, rounded half up at a tenth of a satang.
     ///
     /// Two packages that tie at a whole satang differ here (0.175 against
-    /// 0.167). It is display text: show it as sent instead of computing it.
+    /// 0.167). Show it as sent instead of computing it. It divides `price`, not
+    /// `price_total`, so it excludes VAT when
+    /// [`PackageList::prices_include_vat`] is false.
     pub price_per_credit_baht: String,
     /// Credits included.
     pub credits: u64,
