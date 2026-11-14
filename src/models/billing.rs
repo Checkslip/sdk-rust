@@ -276,7 +276,8 @@ pub struct Order {
     pub credits: u64,
     /// Price.
     pub amount: Money,
-    /// The VAT already inside `amount`, fixed when the order was made.
+    /// The VAT already inside `amount`, fixed when the order was made and not
+    /// changed by a later rate change.
     ///
     /// Do not add it to `amount`: `amount` is what the order asks for. It is
     /// `None` when the order carries no VAT.
@@ -339,21 +340,27 @@ pub struct Package {
     pub name_en: String,
     /// Price.
     pub price: Money,
-    /// What a customer pays for this package: `price` plus VAT when VAT is
-    /// in effect and prices exclude it; otherwise it is the same as `price`.
+    /// What a customer pays for this package now, including any VAT due; do
+    /// not add VAT again.
     ///
-    /// An order opened now asks for this amount, so show this one as the
-    /// price to pay.
+    /// It equals `price` when [`PackageList::vat_rate_bp`] is 0 or
+    /// [`PackageList::prices_include_vat`] is true. An order opened now asks
+    /// for this amount, so show this one as the price to pay.
     pub price_total: Money,
-    /// Price of one credit.
+    /// The price of one credit: `price` divided by `credits`, rounded half up
+    /// to a whole satang, so it excludes VAT when
+    /// [`PackageList::prices_include_vat`] is false.
+    ///
+    /// Read the amount to pay from `price_total`; do not multiply this by
+    /// `credits` to get it.
     pub price_per_credit: Money,
-    /// The same price per credit as `price_per_credit`, in baht, as text with
-    /// three decimals, rounded half up at a tenth of a satang.
+    /// The same price per credit as `price_per_credit`, in baht, as display
+    /// text with three decimals, rounded half up at a tenth of a satang.
     ///
     /// Two packages that tie at a whole satang differ here (0.175 against
-    /// 0.167). Show it as sent rather than working it out from `price` and
-    /// `credits`. Like `price_per_credit` it divides `price`, not
-    /// `price_total`, so it excludes VAT whenever `price` does.
+    /// 0.167). Show it as sent instead of computing it. It divides `price`, not
+    /// `price_total`, so it excludes VAT when
+    /// [`PackageList::prices_include_vat`] is false.
     pub price_per_credit_baht: String,
     /// Credits included.
     pub credits: u64,
@@ -374,8 +381,11 @@ pub struct PackageList {
     /// Whether prices include VAT.
     pub prices_include_vat: bool,
     /// The VAT rate in force now, in basis points: 700 is 7%, and 0 means no
-    /// VAT applies to any package or order yet. Read it to find out whether
-    /// VAT is in effect.
+    /// VAT applies to any package or order yet.
+    ///
+    /// Use it to show the rate and to tell whether VAT is in effect; read the
+    /// amount to pay from each package's [`Package::price_total`] instead of
+    /// computing VAT yourself.
     pub vat_rate_bp: u32,
     /// Whether checkout is open.
     pub checkout_open: bool,
