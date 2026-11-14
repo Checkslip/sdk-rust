@@ -200,7 +200,7 @@ while let Some(record) = found.try_next().await? {
 ## Webhook
 
 เมื่อการดึงข้อมูลสลิปเสร็จ Checkslip ส่งข้อความ `slip.checked` ไปที่ endpoint ของคุณ
-รวมถึงรายการ `PENDING` ที่ได้ผลภายหลัง ข้อความมีลายเซ็นแบบ
+ข้อความมีลายเซ็นแบบ
 [Standard Webhooks](https://www.standardwebhooks.com/) เปิด feature `webhooks`
 เพื่อใช้ตัวตรวจลายเซ็น
 

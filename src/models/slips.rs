@@ -10,7 +10,7 @@ use crate::query::{push_list, push_opt, push_time};
 string_enum! {
     /// The result of looking up a transfer with the sending bank.
     ///
-    /// A lookup returns `FOUND`, `NOT_FOUND`, `DUPLICATE` or `PENDING`. The
+    /// A lookup returns `FOUND`, `NOT_FOUND` or `DUPLICATE`. The
     /// other values appear in history records for requests the API answered
     /// with an error, such as an unreadable QR.
     pub enum Outcome {
@@ -22,10 +22,14 @@ string_enum! {
         /// This account already looked this transfer up and found it, within
         /// the time we keep transfer references; see `duplicate_of`.
         Duplicate = "DUPLICATE",
-        /// The bank has not posted the transfer yet. Checkslip keeps asking
-        /// and sends a `slip.checked` webhook when it knows.
+        /// The bank does not show the transfer yet. The API no longer returns
+        /// this outcome: a lookup is answered in one call, and this case comes
+        /// back as a 503 `UNAVAILABLE` error.
+        ///
+        /// The value stays in the type, so existing code still compiles.
         Pending = "PENDING",
-        /// The bank could not be reached.
+        /// There is no definite answer from the banking system right now.
+        /// No credit is used.
         Unavailable = "UNAVAILABLE",
         /// The QR text is not a bank slip QR.
         InvalidQr = "INVALID_QR",
@@ -52,7 +56,8 @@ string_enum! {
         Duplicate = "DUPLICATE",
         /// Outcome was `PENDING`.
         Pending = "PENDING",
-        /// The bank could not be reached.
+        /// Outcome was `UNAVAILABLE` (there is no definite answer from the
+        /// banking system right now).
         Unavailable = "UNAVAILABLE",
         /// The QR could not be read.
         InvalidQr = "INVALID_QR",
@@ -174,7 +179,8 @@ string_enum! {
         NotFound = "NOT_FOUND",
         /// Outcome was `DUPLICATE`.
         Duplicate = "DUPLICATE",
-        /// The bank could not be reached.
+        /// Outcome was `UNAVAILABLE` (there is no definite answer from the
+        /// banking system right now).
         Unavailable = "UNAVAILABLE",
         /// The QR could not be read.
         InvalidQr = "INVALID_QR",

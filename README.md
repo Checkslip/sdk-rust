@@ -83,7 +83,7 @@ Checkslip reads the QR from the image and does not store the image.
 
 ```rust,no_run
 # async fn run(client: checkslip::Client, check: checkslip::SlipCheck) -> checkslip::Result<()> {
-use checkslip::time::macros::date;
+use checkslip::time::{Date, Month};
 use checkslip::UsageParams;
 
 // the stored record of an earlier lookup
@@ -92,9 +92,9 @@ let record = client.slips().get(check.request_id).await?;
 let balance = client.billing().balance().get().await?;
 println!("{} credits left", balance.credits);
 
-let usage = client
-    .usage().get(&UsageParams::new(date!(2026 - 11 - 01), date!(2026 - 11 - 30)))
-    .await?;
+let from = Date::from_calendar_date(2026, Month::November, 1).expect("1 November 2026 is a real day");
+let to = Date::from_calendar_date(2026, Month::November, 30).expect("30 November 2026 is a real day");
+let usage = client.usage().get(&UsageParams::new(from, to)).await?;
 
 let banks = client.banks().list().await?; // needs no API key
 # Ok(())
@@ -244,7 +244,7 @@ fails, the stream yields that error and ends.
 ## Webhooks
 
 Checkslip sends a `slip.checked` message to your endpoint when a lookup
-finishes, including a `PENDING` lookup that resolves later. Messages are
+finishes. Messages are
 signed the [Standard Webhooks](https://www.standardwebhooks.com/) way, and the
 `webhooks` feature adds a checker:
 
