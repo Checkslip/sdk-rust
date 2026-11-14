@@ -47,14 +47,25 @@ async fn main() -> checkslip::Result<()> {
 
     match check.outcome {
         Outcome::Found => {
-            let slip = check.slip.as_full().expect("FOUND carries the full record");
-            println!("{} satang from {}", slip.amount.satang, slip.sender.bank.code);
+            let slip = check
+                .slip
+                .as_full()
+                .expect("FOUND carries the full record");
+            println!(
+                "{} satang from {}",
+                slip.amount.satang, slip.sender.bank.code
+            );
         }
         Outcome::Duplicate => println!(
             "already checked this slip, first at {}",
-            check.duplicate_of.expect("DUPLICATE carries duplicate_of").checked_at
+            check
+                .duplicate_of
+                .expect("DUPLICATE carries duplicate_of")
+                .checked_at
         ),
-        Outcome::NotFound => println!("the bank has no transfer with this reference"),
+        Outcome::NotFound => {
+            println!("the bank has no transfer with this reference")
+        }
         other => println!("outcome {other}"),
     }
     Ok(())

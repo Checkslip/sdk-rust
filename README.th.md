@@ -46,11 +46,17 @@ async fn main() -> checkslip::Result<()> {
     match check.outcome {
         Outcome::Found => {
             let slip = check.slip.as_full().expect("FOUND มีข้อมูลเต็ม");
-            println!("{} สตางค์ จาก {}", slip.amount.satang, slip.sender.bank.code);
+            println!(
+                "{} สตางค์ จาก {}",
+                slip.amount.satang, slip.sender.bank.code
+            );
         }
         Outcome::Duplicate => println!(
             "ตรวจใบนี้ไปแล้ว ครั้งแรกเมื่อ {}",
-            check.duplicate_of.expect("DUPLICATE มี duplicate_of").checked_at
+            check
+                .duplicate_of
+                .expect("DUPLICATE มี duplicate_of")
+                .checked_at
         ),
         Outcome::NotFound => println!("ธนาคารไม่มีรายการตามเลขอ้างอิงนี้"),
         other => println!("ผล {other}"),
