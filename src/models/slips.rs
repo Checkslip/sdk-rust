@@ -22,9 +22,9 @@ string_enum! {
         /// This account already looked this transfer up and found it, within
         /// the time we keep transfer references; see `duplicate_of`.
         Duplicate = "DUPLICATE",
-        /// The bank does not show the transfer yet. The API no longer returns
-        /// this outcome: a lookup is answered in one call, and this case comes
-        /// back as a 503 `UNAVAILABLE` error.
+        /// This outcome is not in use yet. A lookup is answered in one call,
+        /// so when the bank does not show the transfer the API answers with a
+        /// 503 `UNAVAILABLE` error and does not look again.
         ///
         /// The value stays in the type, so existing code still compiles.
         Pending = "PENDING",
