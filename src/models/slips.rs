@@ -1,3 +1,5 @@
+// qa-customer-text: the Outcome and FreeReason doc comments reach
+// docs.rs, and their words are the contract's.
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};

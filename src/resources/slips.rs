@@ -1,3 +1,5 @@
+// qa-customer-text: the lookup method docs reach docs.rs, and the docs
+// site reads these signatures for its code tabs.
 use bytes::Bytes;
 use reqwest::Method;
 use uuid::Uuid;
