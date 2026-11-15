@@ -1,3 +1,5 @@
+// qa-customer-text: the webhook payload and event doc comments reach
+// docs.rs.
 use std::fmt;
 
 use serde::{Deserialize, Deserializer, Serialize};
@@ -451,10 +453,9 @@ pub struct SlipCheckedData {
     /// The check that first found this transfer, for duplicates.
     #[serde(default)]
     pub duplicate_of: Option<DuplicateOf>,
-    /// Always `false` today: a lookup is answered in one call, so no lookup
-    /// is `PENDING` first. The field stays, and stays required, so code that
-    /// reads it keeps working. `true` used to mean this lookup came back
-    /// `PENDING` and this is its final answer.
+    /// Always `false` today: no lookup is answered `PENDING`, so none is
+    /// resolved after one. The field stays in the payload, and required, so
+    /// code that reads it keeps working.
     #[serde(default)]
     pub resolved_after_pending: bool,
 }
