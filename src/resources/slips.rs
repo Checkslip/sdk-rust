@@ -138,7 +138,7 @@ impl Slips {
         Slips { client }
     }
 
-    /// Asks the sending bank for the transfer behind a slip.
+    /// Asks the banking system for the transfer behind a slip.
     ///
     /// Check `outcome` on the result: today `FOUND`, `NOT_FOUND` or
     /// `DUPLICATE`. Only `FOUND` uses a credit. A lookup is answered in one
