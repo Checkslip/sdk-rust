@@ -1,9 +1,10 @@
 //! Rust client for the [Checkslip](https://checkslip.com) API.
 //!
 //! Checkslip looks up Thai bank transfers. You send the QR text from a
-//! transfer slip, or the slip image, and Checkslip asks the sending bank for
-//! the transfer it holds. You get back what the bank has (amount, time,
-//! sender, receiver) and decide for yourself whether it matches your order.
+//! transfer slip, or the slip image, and Checkslip asks the banking system
+//! for the transfer. You get back what the sending bank holds (amount, time,
+//! sender, receiver), as far as the bank shows them, and decide for yourself
+//! whether it matches your order.
 //!
 //! ```no_run
 //! use checkslip::{Client, LookupRequest, Outcome};
