@@ -10,7 +10,7 @@ use super::common::{DuplicateOf, SlipData};
 use crate::query::{push_list, push_opt, push_time};
 
 string_enum! {
-    /// The result of looking up a transfer with the sending bank.
+    /// The result of looking up a transfer with the banking system.
     ///
     /// A lookup returns `FOUND`, `NOT_FOUND` or `DUPLICATE`. The
     /// other values appear in history records for requests the API answered
