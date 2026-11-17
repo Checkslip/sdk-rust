@@ -7,9 +7,20 @@ All notable changes to this crate are listed here. The format follows
 ## [0.8.1](https://github.com/Checkslip/sdk-rust/compare/v0.8.0...v0.8.1) (2026-11-17)
 
 
-### Miscellaneous Chores
+### Documentation
 
-* release 0.8.1 for the corrected wording ([92afb13](https://github.com/Checkslip/sdk-rust/commit/92afb13ecdf00bfa0ab9f2f9c1878233504ca4f6))
+Wording only; no code or behaviour changed in this release.
+
+* Every sentence that says where a lookup is answered now says "the banking
+  system", because that is how a transfer is read: through the banking
+  system's sources, not over a direct line to the bank that sent the money.
+  That bank is still named, but only as the holder of the record. Corrected in
+  README and the crate docs on docs.rs.
+* The sender and receiver names and the last 4 account digits were promised
+  without conditions. Those fields can be `null`, and a receiver that is not a
+  bank account has no bank or account at all, so the docs now say "as far as
+  the bank shows them". Code that compares a name should allow for a missing
+  one.
 
 ## [0.8.0](https://github.com/Checkslip/sdk-rust/compare/v0.7.0...v0.8.0) (2026-11-14)
 
