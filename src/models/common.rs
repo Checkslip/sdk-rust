@@ -90,7 +90,7 @@ pub struct Receiver {
     pub account: Option<String>,
 }
 
-/// The full transfer record the sending bank returned.
+/// The full transfer record the banking system returned.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Slip {
