@@ -4,6 +4,21 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2](https://github.com/Checkslip/sdk-rust/compare/v0.8.1...v0.8.2) (2026-11-17)
+
+
+### Documentation
+
+Wording only; no code or behaviour changed in this release.
+
+* The `Slip` struct is documented as the transfer record the banking system
+  returned. This is the type the lookup hands back, and its doc is what
+  docs.rs serves.
+* Why it matters: a lookup is answered through the banking system's sources,
+  so naming the bank that sent the money as the one acting reads as though
+  Checkslip contacts that bank itself. That bank is still named where it
+  belongs, as the holder of the record.
+
 ## [0.8.1](https://github.com/Checkslip/sdk-rust/compare/v0.8.0...v0.8.1) (2026-11-17)
 
 
