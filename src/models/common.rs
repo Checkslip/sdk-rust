@@ -54,9 +54,13 @@ pub struct Bank {
 pub struct Party {
     /// The sender's bank.
     pub bank: Bank,
-    /// Name in Thai as the bank returned it, usually shortened.
+    /// Name in Thai as the bank returned it, usually shortened. `None` when
+    /// the bank sends no name, or when the names were erased (see
+    /// [`Slip::names_erased`]).
     pub name_th: Option<String>,
-    /// Name in English as the bank returned it, usually shortened.
+    /// Name in English as the bank returned it, usually shortened. `None`
+    /// when the bank sends no name, or when the names were erased (see
+    /// [`Slip::names_erased`]).
     pub name_en: Option<String>,
     /// Last four digits of the account, when the bank returned them.
     pub account: Option<String>,
