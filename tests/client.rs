@@ -856,3 +856,46 @@ async fn balance_still_reads_a_threshold_basis_when_one_arrives() {
         .unwrap();
     assert_eq!(bal.threshold_basis, Some(ThresholdBasis::Avg7Days));
 }
+
+/// A READY evidence export, with the manifest exactly as the published API
+/// reference describes it: format, record_count, sha256, size_bytes. This crate
+/// demanded two fields the API has never sent (`hash_algorithm`,
+/// `canonicalization`), so every READY export failed to decode.
+#[tokio::test]
+async fn a_ready_evidence_export_decodes() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path(
+            "/api/audit/exports/0192d4e0-0000-7000-8000-00000000f00d",
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "export_id": "0192d4e0-0000-7000-8000-00000000f00d",
+            "status": "READY",
+            "from_day": "2026-11-01",
+            "to_day": "2026-11-07",
+            "streams": ["INBOUND"],
+            "created_at": "2026-11-08T09:00:00+07:00",
+            "ready_at": "2026-11-08T09:03:00+07:00",
+            "expires_at": "2026-12-08T09:03:00+07:00",
+            "manifest": {
+                "format": "checkslip-audit-export/3",
+                "record_count": 1402,
+                "sha256": "3b1f2c4d5e6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
+                "size_bytes": 884215
+            }
+        })))
+        .mount(&server)
+        .await;
+
+    let export = no_retry_client(&server)
+        .audit()
+        .exports()
+        .get(checkslip::uuid::Uuid::parse_str("0192d4e0-0000-7000-8000-00000000f00d").unwrap())
+        .await
+        .unwrap();
+
+    let manifest = export.manifest.expect("a READY export carries a manifest");
+    assert_eq!(manifest.record_count, 1402);
+    assert_eq!(manifest.format, "checkslip-audit-export/3");
+    assert_eq!(manifest.size_bytes, 884215);
+}
