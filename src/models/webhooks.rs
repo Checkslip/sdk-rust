@@ -284,6 +284,9 @@ pub struct Delivery {
     pub id: String,
     /// Message ID (`msg_...`), sent as the `webhook-id` header.
     pub message_id: String,
+    /// The lookup this message is about.
+    #[serde(default)]
+    pub request_id: Option<Uuid>,
     /// The endpoint.
     pub endpoint_id: String,
     /// Event type.

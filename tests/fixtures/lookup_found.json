@@ -18,7 +18,8 @@
       },
       "name_th": "นาย สมชาย ใ",
       "name_en": "MR. SOMCHAI J",
-      "account": "0439"
+      "account": "0439",
+      "account_masked": "xxx-x-x0439-x"
     },
     "receiver": {
       "kind": "BANK_ACCOUNT",
@@ -30,7 +31,8 @@
       },
       "name_th": "นางสาว สมหญิง ร",
       "name_en": "MISS SOMYING R",
-      "account": "9681"
+      "account": "9681",
+      "account_masked": "xxx-x-xx968-1"
     }
   }
 }
