@@ -10,6 +10,7 @@ All notable changes to this crate are listed here. The format follows
 ### Bug Fixes
 
 * read a balance that carries no threshold_basis ([05a4a6d](https://github.com/Checkslip/sdk-rust/commit/05a4a6d63e4b8eb34fe618c43e9da53b435ddf73))
+* `Balance::threshold_basis` is now `Option<ThresholdBasis>`. The API stopped sending the field to customers, so it is always `None`; code that read it as a value needs a match or `as_ref()`. Reading a balance at all was failing with `Error::Decode` before this.
 
 ## [0.9.0](https://github.com/Checkslip/sdk-rust/compare/v0.8.2...v0.9.0) (2026-11-20)
 
