@@ -228,6 +228,8 @@ sent at most three times.
   the request twice cannot do harm: `GET`, `PUT` and `DELETE` calls, and
   `POST` calls that carry an `Idempotency-Key`. A `POST` without one, such as
   creating a webhook endpoint, is never resent.
+  A `Retry-After` longer than `max_retry_after` is returned straight away here
+  too: the client never asks again sooner than the server allowed.
 - A lookup that gets `409 IDEMPOTENCY_IN_FLIGHT` is retried, because the first
   request with that key is still running.
 - Waits between attempts start at 500 ms and double each time up to 8 seconds.

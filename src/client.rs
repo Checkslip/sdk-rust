@@ -227,9 +227,16 @@ impl Client {
                     && spec.idempotency_key.is_some()
                     && problem.code.as_deref() == Some("IDEMPOTENCY_IN_FLIGHT"));
             if can_retry && replay_safe && retryable_status {
-                let wait = retry_after
-                    .filter(|d| *d <= policy.max_retry_after)
-                    .unwrap_or_else(|| policy.backoff(attempt));
+                // A Retry-After longer than max_retry_after is handed back
+                // rather than waited out, and it is never shortened to the
+                // backoff: asking again sooner than the server asked for is
+                // worse for the server and for the caller than returning the
+                // error now. The JavaScript and Go clients answer at once
+                // here too, and the 429 branch above already did.
+                if retry_after.is_some_and(|d| d > policy.max_retry_after) {
+                    return Err(api_error(status, problem, request_id));
+                }
+                let wait = retry_after.unwrap_or_else(|| policy.backoff(attempt));
                 tokio::time::sleep(wait).await;
                 attempt += 1;
                 continue;
