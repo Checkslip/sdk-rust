@@ -856,3 +856,84 @@ async fn balance_still_reads_a_threshold_basis_when_one_arrives() {
         .unwrap();
     assert_eq!(bal.threshold_basis, Some(ThresholdBasis::Avg7Days));
 }
+
+/// A 5xx that asks for longer than `max_retry_after` is returned at once. The
+/// client used to fall back to its own backoff here, which asks again sooner
+/// than the server allowed; js and go have always answered at once (pm
+/// h-mwp275vt5f7).
+#[tokio::test]
+async fn a_retry_after_over_the_ceiling_is_not_retried() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/billing/balance"))
+        .respond_with(
+            ResponseTemplate::new(503)
+                .insert_header("content-type", "application/problem+json")
+                .insert_header("retry-after", "3600")
+                .set_body_json(json!({
+                    "type": "https://checkslip.com/problems/credit-unavailable",
+                    "title": "ระบบเครดิตไม่พร้อม",
+                    "status": 503,
+                    "code": "CREDIT_UNAVAILABLE",
+                    "instance": "/api/billing/balance",
+                })),
+        )
+        .mount(&server)
+        .await;
+
+    let started = std::time::Instant::now();
+    let err = client(&server).billing().balance().get().await.unwrap_err();
+
+    assert_eq!(err.status(), Some(503));
+    assert_eq!(err.code(), Some("CREDIT_UNAVAILABLE"));
+    assert_eq!(
+        server.received_requests().await.unwrap().len(),
+        1,
+        "asked again although the server said to wait an hour"
+    );
+    assert!(
+        started.elapsed() < Duration::from_secs(1),
+        "waited instead of answering"
+    );
+}
+
+/// The ceiling only stops a wait that is too long: a Retry-After inside it is
+/// still waited out and the call retried.
+#[tokio::test]
+async fn a_retry_after_inside_the_ceiling_is_still_retried() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/billing/balance"))
+        .respond_with(
+            ResponseTemplate::new(503)
+                .insert_header("content-type", "application/problem+json")
+                .insert_header("retry-after", "0")
+                .set_body_json(json!({
+                    "type": "https://checkslip.com/problems/credit-unavailable",
+                    "title": "ระบบเครดิตไม่พร้อม",
+                    "status": 503,
+                    "code": "CREDIT_UNAVAILABLE",
+                    "instance": "/api/billing/balance",
+                })),
+        )
+        .up_to_n_times(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/api/billing/balance"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "account_id": "6f1c2a8e-2b4f-4d6a-9a52-3a1f0c8e9b10",
+            "credits": 5,
+            "low": true,
+            "threshold": 10,
+            "expires_at": null,
+            "updated_at": "2026-11-20T09:00:00+07:00",
+            "last_entry_id": null
+        })))
+        .mount(&server)
+        .await;
+
+    let bal = client(&server).billing().balance().get().await.unwrap();
+    assert_eq!(bal.credits, 5);
+    assert_eq!(server.received_requests().await.unwrap().len(), 2);
+}
