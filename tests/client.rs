@@ -929,6 +929,15 @@ async fn a_retry_after_inside_the_ceiling_is_still_retried() {
             "expires_at": null,
             "updated_at": "2026-11-20T09:00:00+07:00",
             "last_entry_id": null
+        })))
+        .mount(&server)
+        .await;
+
+    let bal = client(&server).billing().balance().get().await.unwrap();
+    assert_eq!(bal.credits, 5);
+    assert_eq!(server.received_requests().await.unwrap().len(), 2);
+}
+
 /// A READY evidence export, with the manifest exactly as the published API
 /// reference describes it: format, record_count, sha256, size_bytes. This crate
 /// demanded two fields the API has never sent (`hash_algorithm`,
@@ -959,9 +968,6 @@ async fn a_ready_evidence_export_decodes() {
         .mount(&server)
         .await;
 
-    let bal = client(&server).billing().balance().get().await.unwrap();
-    assert_eq!(bal.credits, 5);
-    assert_eq!(server.received_requests().await.unwrap().len(), 2);
     let export = no_retry_client(&server)
         .audit()
         .exports()
