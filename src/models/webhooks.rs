@@ -284,7 +284,13 @@ pub struct Delivery {
     pub id: String,
     /// Message ID (`msg_...`), sent as the `webhook-id` header.
     pub message_id: String,
-    /// The lookup this message is about.
+    /// The id of the lookup whose result this message carries, the same as
+    /// data.request_id in the slip.checked message. Use it with GET
+    /// /api/slips/{request_id} to read the same result, for example when
+    /// the message cannot be resent. It is null for a test message
+    /// (webhook.test), which has no result to read, so do not call GET with
+    /// it. It is not the X-Request-Id of the request that reads this
+    /// delivery.
     #[serde(default)]
     pub request_id: Option<Uuid>,
     /// The endpoint.

@@ -4,9 +4,9 @@ use std::time::Duration;
 
 use checkslip::time::macros::{date, datetime};
 use checkslip::{
-    Client, CreateEndpoint, Error, EventType, ListSlipsParams, LookupRequest, LotKind, Outcome,
-    ReceiverKind, SlipData, ThresholdBasis, UnavailableReason, UpdateEndpoint, UsageInterval,
-    UsageParams,
+    Client, CreateEndpoint, Error, EventType, ListDeliveriesParams, ListSlipsParams, LookupRequest,
+    LotKind, Outcome, ReceiverKind, SlipData, ThresholdBasis, UnavailableReason, UpdateEndpoint,
+    UsageInterval, UsageParams,
 };
 use futures_util::TryStreamExt;
 use serde_json::{json, Value};
@@ -605,6 +605,7 @@ async fn keyed_webhook_posts_get_a_key() {
             "id": "dlv_01JC0000000000000000000000",
             "message_id": "msg_01JC0000000000000000000000",
             "endpoint_id": "ep_01JC0000000000000000000000",
+            "request_id": "0192d4e0-7c1a-7b3e-9f00-1a2b3c4d5e6f",
             "event_type": "slip.checked",
             "status": "PENDING",
             "attempt_count": 0,
@@ -637,6 +638,11 @@ async fn keyed_webhook_posts_get_a_key() {
         .await
         .unwrap();
     assert_eq!(d.status, checkslip::DeliveryStatus::Pending);
+    // The lookup this message carries, for GET /api/slips/{request_id}.
+    assert_eq!(
+        d.request_id.map(|id| id.to_string()).as_deref(),
+        Some("0192d4e0-7c1a-7b3e-9f00-1a2b3c4d5e6f")
+    );
     c.webhooks()
         .endpoints()
         .rotate_secret("ep_01JC0000000000000000000000", None)
@@ -1104,4 +1110,41 @@ async fn an_unknown_lot_kind_is_kept() {
         LotKind::Unknown("PARTNER_GIFT".to_owned())
     );
     assert_eq!(bal.lots[0].credits_left, 5);
+}
+
+/// A test message has no lookup behind it, so request_id is null and the field
+/// reads as None: the doc comment tells the reader not to call GET with it, and
+/// None is what makes that checkable (checkslip/webhook h-mwp6pbmg810).
+#[tokio::test]
+async fn a_test_message_carries_no_lookup_id() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/webhooks/deliveries"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "items": [{
+                "id": "dlv_01JC0000000000000000000001",
+                "message_id": "msg_01JC0000000000000000000001",
+                "request_id": null,
+                "endpoint_id": "ep_01JC0000000000000000000000",
+                "event_type": "webhook.test",
+                "status": "PENDING",
+                "attempt_count": 0,
+                "next_attempt_at": null,
+                "last_attempt_at": null,
+                "last_http_status": null,
+                "created_at": "2026-11-09T10:00:00+07:00"
+            }],
+            "next_cursor": null
+        })))
+        .mount(&server)
+        .await;
+
+    let page = no_retry_client(&server)
+        .webhooks()
+        .deliveries()
+        .list(&ListDeliveriesParams::default())
+        .await
+        .unwrap();
+
+    assert_eq!(page.items[0].request_id, None);
 }
