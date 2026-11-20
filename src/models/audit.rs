@@ -418,10 +418,8 @@ pub struct ExportCreator {
 pub struct ExportManifest {
     /// File format name.
     pub format: String,
-    /// Hash algorithm.
-    pub hash_algorithm: String,
-    /// JSON canonicalization used before hashing.
-    pub canonicalization: String,
+    /// How many records the file holds.
+    pub record_count: u64,
     /// SHA-256 of the file, hex.
     pub sha256: String,
     /// File size in bytes.
