@@ -4,6 +4,21 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0](https://github.com/Checkslip/sdk-rust/compare/v0.9.1...v0.10.0) (2026-11-20)
+
+
+### Features
+
+* carry the credit lots and the other fields the API already sends ([d577631](https://github.com/Checkslip/sdk-rust/commit/d577631efcfbd0689c98f4640f5ac13e196fcaf3))
+
+
+### Bug Fixes
+
+* decode the export manifest the API really sends ([833851c](https://github.com/Checkslip/sdk-rust/commit/833851cdc958e3f01fb2fd9e4c808de40a071b74))
+* hand back a Retry-After this client will not wait out ([ec9d2a0](https://github.com/Checkslip/sdk-rust/commit/ec9d2a0d776574798cb6bc93af5f68d7246a5c86))
+* `ExportManifest` now has the four fields the published API reference describes: `hash_algorithm` and `canonicalization` are gone, which the API never sent, and `record_count` is new. A READY evidence export could not be decoded at all before this.
+* A 5xx that asks for longer than `max_retry_after` is returned at once instead of being retried on the client's own backoff, so this client no longer asks again sooner than the server allowed. It now answers like the JavaScript and Go clients.
+
 ## [0.9.1](https://github.com/Checkslip/sdk-rust/compare/v0.9.0...v0.9.1) (2026-11-20)
 
 
