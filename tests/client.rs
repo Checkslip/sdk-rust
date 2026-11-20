@@ -5,7 +5,8 @@ use std::time::Duration;
 use checkslip::time::macros::{date, datetime};
 use checkslip::{
     Client, CreateEndpoint, Error, EventType, ListSlipsParams, LookupRequest, Outcome,
-    ReceiverKind, SlipData, UnavailableReason, UpdateEndpoint, UsageInterval, UsageParams,
+    ReceiverKind, SlipData, ThresholdBasis, UnavailableReason, UpdateEndpoint, UsageInterval,
+    UsageParams,
 };
 use futures_util::TryStreamExt;
 use serde_json::{json, Value};
@@ -203,7 +204,6 @@ async fn rate_limit_waits_for_retry_after_then_succeeds() {
             "credits": 120,
             "low": false,
             "threshold": 10,
-            "threshold_basis": "AVG_7_DAYS",
             "expires_at": "2027-11-01T00:00:00+07:00",
             "updated_at": "2026-11-09T09:00:00+07:00",
             "last_entry_id": null
@@ -218,6 +218,10 @@ async fn rate_limit_waits_for_retry_after_then_succeeds() {
         "waited Retry-After"
     );
     assert_eq!(bal.credits, 120);
+    // The live answer carries no threshold_basis, and has not since billing
+    // 0.48.0 (9 Nov 2026). While the field was required here, this call failed
+    // with Error::Decode for every customer.
+    assert_eq!(bal.threshold_basis, None);
     assert_eq!(server.received_requests().await.unwrap().len(), 2);
 }
 
@@ -822,4 +826,33 @@ async fn only_a_503_reports_a_reason() {
 
     assert_eq!(err.code(), Some("INVALID_QR"));
     assert_eq!(err.unavailable_reason(), None);
+}
+
+/// The field is optional now, not gone: a body that still carries it reads
+/// through, so an older server or a replayed fixture does not fail the call.
+#[tokio::test]
+async fn balance_still_reads_a_threshold_basis_when_one_arrives() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/billing/balance"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "account_id": "6f1c2a8e-2b4f-4d6a-9a52-3a1f0c8e9b10",
+            "credits": 7,
+            "low": true,
+            "threshold": 10,
+            "threshold_basis": "AVG_7_DAYS",
+            "expires_at": null,
+            "updated_at": "2026-11-20T09:00:00+07:00",
+            "last_entry_id": null
+        })))
+        .mount(&server)
+        .await;
+
+    let bal = no_retry_client(&server)
+        .billing()
+        .balance()
+        .get()
+        .await
+        .unwrap();
+    assert_eq!(bal.threshold_basis, Some(ThresholdBasis::Avg7Days));
 }
