@@ -62,8 +62,23 @@ pub struct Party {
     /// when the bank sends no name, or when the names were erased (see
     /// [`Slip::names_erased`]).
     pub name_en: Option<String>,
-    /// Last four digits of the account, when the bank returned them.
+    /// The last 4 digits of the account as the bank shows them. `None` when
+    /// the bank sends no number, or when the data was erased (see
+    /// [`Slip::names_erased`]). Different accounts can share the same last 4
+    /// digits, so do not use it on its own to identify an account.
     pub account: Option<String>,
+    /// The account number with most digits hidden, in a fixed shape that
+    /// follows the account's length: `xxx-x-xxxxx-x` for a 10-digit account and
+    /// `xxx-x-xxxxx-xxx` for a 12-digit one. The digits you see are the ones
+    /// the bank itself shows, in their real places in the account number. Which
+    /// digits, and how many, depends on the account holder's bank, because each
+    /// bank hides different digits, for example `xxx-x-x1234-x` or
+    /// `12x-x-xx345-6`. The same transfer always gives the same value. `None`
+    /// when the bank shows no digit, or when the data was erased (see
+    /// [`Slip::names_erased`]). Do not use it on its own to identify an
+    /// account.
+    #[serde(default)]
+    pub account_masked: Option<String>,
 }
 
 string_enum! {
@@ -90,8 +105,24 @@ pub struct Receiver {
     pub name_th: Option<String>,
     /// Name in English, when the bank returned it.
     pub name_en: Option<String>,
-    /// Last four digits of the account, when the bank returned them.
+    /// The last 4 digits of the receiver's account as the bank shows them.
+    /// `None` when the bank sends no number, when `kind` is not `BANK_ACCOUNT`
+    /// because the destination is not a bank account, or when the data was
+    /// erased (see [`Slip::names_erased`]). Different accounts can share the
+    /// same last 4 digits, so do not use it on its own to identify an account.
     pub account: Option<String>,
+    /// The account number with most digits hidden, in a fixed shape that
+    /// follows the account's length: `xxx-x-xxxxx-x` for a 10-digit account and
+    /// `xxx-x-xxxxx-xxx` for a 12-digit one. The digits you see are the ones
+    /// the bank itself shows, in their real places in the account number. Which
+    /// digits, and how many, depends on the account holder's bank, because each
+    /// bank hides different digits, for example `xxx-x-x1234-x` or
+    /// `12x-x-xx345-6`. The same transfer always gives the same value. `None`
+    /// when the bank shows no digit, when `kind` is not `BANK_ACCOUNT`, or when the data was erased (see
+    /// [`Slip::names_erased`]). Do not use it on its own to identify an
+    /// account.
+    #[serde(default)]
+    pub account_masked: Option<String>,
 }
 
 /// The full transfer record the banking system returned.
@@ -136,6 +167,11 @@ pub struct SlipSummary {
 
 /// Transfer data on a lookup result: either the full bank record or a
 /// summary.
+// The two variants differ in size because the API answers two different
+// shapes, and boxing the larger one to satisfy clippy would change a public
+// type that callers match on. The cost is a few hundred bytes on the stack
+// for a value the caller holds once per lookup.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 #[non_exhaustive]

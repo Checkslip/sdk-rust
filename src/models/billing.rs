@@ -26,27 +26,106 @@ string_enum! {
 pub struct Balance {
     /// Account ID.
     pub account_id: Uuid,
-    /// Credits left. One `FOUND` lookup uses one credit.
+    /// All the credits the account has now, the sum of `credits_left` over
+    /// every lot in `lots`. A slip lookup (looking up the transfer's data with
+    /// the bank) uses 1 credit only when a matching transfer is found.
     pub credits: u64,
-    /// `true` when `credits` is at or below `threshold`.
+    /// `true` when `credits` is below `threshold`, meaning credits are running
+    /// low. It is the same rule as the low-credit email and the web app, so
+    /// read this value rather than working it out.
     pub low: bool,
-    /// The low-balance threshold.
+    /// The credit level below which this account counts as running low (`low`,
+    /// and the low-credit email). It is set from this account's own use. 0
+    /// means no warning yet (`low` is false).
     pub threshold: u64,
+    /// About how many credits this account would use in a year at its recent
+    /// pace. `None` means there has not been enough recent use to tell.
+    #[serde(default)]
+    pub credits_per_year: Option<u64>,
+    /// The lots that still have credits, in the order they are charged, the
+    /// next one first. `credits` is their sum. Lots with nothing left are not
+    /// listed.
+    #[serde(default)]
+    pub lots: Vec<CreditLot>,
+    /// The soonest expiry among lots that still have credits, the date some of
+    /// the credits start to expire. `None` means no credits are left.
+    #[serde(default, with = "time::serde::rfc3339::option")]
+    pub next_expires_at: Option<OffsetDateTime>,
     /// How `threshold` was worked out. Always `None`: the API stopped sending
     /// this to customers in November 2026, and the published API reference
     /// does not list this field. There is no replacement field. It stays here
     /// so code that reads it still compiles.
     #[serde(default)]
     pub threshold_basis: Option<ThresholdBasis>,
-    /// When the credits expire, if they do.
+    /// The latest expiry among lots that still have credits (after every lot
+    /// has run out, it still gives the date of the last one). `None` means
+    /// credits were never bought or given. For when the first lot runs out,
+    /// read `next_expires_at`.
     #[serde(with = "time::serde::rfc3339::option")]
     pub expires_at: Option<OffsetDateTime>,
-    /// When the balance last changed.
+    /// When this balance last changed.
     #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
-    /// The newest ledger entry, if any.
+    /// The id of the latest credit entry this balance already counts (the same
+    /// id as in the credit history). `None` means there are no entries yet.
     #[serde(default)]
     pub last_entry_id: Option<Uuid>,
+}
+
+/// One text in two languages; both are always there.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct ThEn {
+    /// The text in Thai.
+    pub th: String,
+    /// The text in English.
+    pub en: String,
+}
+
+/// One lot of credits with its own expiry. The account's credits are the sum of
+/// its lots. A credit is used only when a matching transfer is found, and it is
+/// taken from the usable lot that expires first; when two expire at the same
+/// moment, a campaign lot is used before a bought one.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct CreditLot {
+    /// This lot's id, the same value as [`CreditEntry::lot_id`] in the credit
+    /// history.
+    pub id: Uuid,
+    /// The kind of lot. New kinds may be added: show an unknown kind as credits
+    /// with their expiry.
+    pub kind: LotKind,
+    /// The campaign that gave this lot, on `CAMPAIGN` lots only. `None` on
+    /// other lots.
+    #[serde(default)]
+    pub campaign_id: Option<Uuid>,
+    /// The campaign's name in Thai and English, as the campaign had it when
+    /// this account claimed (a later rename does not change it). Both languages
+    /// always come; pick which one to show for your user. `CAMPAIGN` lots only;
+    /// `None` on other lots.
+    #[serde(default)]
+    pub campaign_name: Option<ThEn>,
+    /// The credits this lot has left.
+    pub credits_left: u64,
+    /// On a `CAMPAIGN` lot, how many credits the campaign gave at the start;
+    /// with `credits_left` it shows how many were used. On the `PAID` lot it is
+    /// `None`, because that lot grows with every purchase.
+    #[serde(default)]
+    pub granted: Option<u64>,
+    /// When the credits left in this lot expire.
+    #[serde(with = "time::serde::rfc3339")]
+    pub expires_at: OffsetDateTime,
+    /// `true` when a slip lookup can be charged to this lot now. `false` when
+    /// it has expired (and is not yet gone from the list), our team has paused
+    /// its use, or a campaign lot has used its daily number for today (it works
+    /// again from 00:00 Thailand time). Meanwhile lookups are charged to
+    /// another usable lot.
+    pub usable: bool,
+    /// On a campaign lot with a daily number: the credits this lot can still
+    /// give today, by the Thailand-time day, which starts again at 00:00.
+    /// `None` means this lot has no daily limit.
+    #[serde(default)]
+    pub usable_today: Option<u64>,
 }
 
 string_enum! {
@@ -166,6 +245,26 @@ string_enum! {
         AccountRestored = "ACCOUNT_RESTORED",
         /// Development grant.
         DevGrant = "DEV_GRANT",
+        /// A campaign gave credits.
+        CampaignGrant = "CAMPAIGN_GRANT",
+        /// A campaign's credits expired.
+        CampaignExpire = "CAMPAIGN_EXPIRE",
+        /// A campaign's credits were taken back.
+        CampaignReclaim = "CAMPAIGN_RECLAIM",
+    }
+}
+
+string_enum! {
+    /// The kind of a credit lot. New kinds may be added: show an unknown kind
+    /// as credits with their expiry.
+    pub enum LotKind {
+        /// Every credit that did not come from a campaign (bought, trial,
+        /// adjusted by our team) as one lot per account; a purchase sets its
+        /// expiry to at least one year from the payment and never shortens it.
+        Paid = "PAID",
+        /// Credits a campaign gave, which expire on that campaign's own date
+        /// and are not moved by a purchase.
+        Campaign = "CAMPAIGN",
     }
 }
 
@@ -198,9 +297,18 @@ pub struct CreditEntry {
     pub expires_at_after: Option<OffsetDateTime>,
     /// Why the balance changed.
     pub reason: CreditReason,
-    /// Why a lookup was free, for `SLIP_FREE`.
+    /// Why that slip lookup used no credit, on `SLIP_FREE` entries only. The
+    /// set is open, so we may add new values: when your code meets a value it
+    /// does not know, treat it as no credit used rather than letting it break.
     #[serde(default)]
     pub free_reason: Option<FreeReason>,
+    /// The lot this entry added to or took from, the same as a
+    /// [`CreditLot::id`] in the balance's `lots`. `None` on entries that did
+    /// not change credits (`delta` 0), on entries from before lots existed, and
+    /// on entries that changed several lots at once (such as an account
+    /// deletion or restore).
+    #[serde(default)]
+    pub lot_id: Option<Uuid>,
     /// What the entry points at.
     #[serde(default)]
     pub ref_type: Option<LedgerRefType>,
@@ -270,6 +378,11 @@ string_enum! {
 pub struct Order {
     /// Order ID.
     pub id: Uuid,
+    /// The order's code for people (ORD-XXXXX-XXXXX), to show and to look the
+    /// order up instead of `id`. Its last character is a check: one wrong
+    /// character finds nothing rather than a guess.
+    #[serde(default)]
+    pub code: String,
     /// Current state.
     pub status: OrderStatus,
     /// Package code.
@@ -374,6 +487,28 @@ pub struct Package {
     pub for_sale: bool,
     /// Display order.
     pub sort: i32,
+    /// A time-limited lower price running now, or `None` when there is none.
+    /// `price` stays the regular price; an order opened before
+    /// [`PackageOffer::ends_at`] asks for the offer price, which `price_total`
+    /// shows. After that moment the regular price applies again on its own.
+    #[serde(default)]
+    pub offer: Option<PackageOffer>,
+}
+
+/// The time-limited price of a [`Package`] while an offer runs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct PackageOffer {
+    /// The offer price of the package.
+    pub price: Money,
+    /// The offer price of one credit.
+    pub price_per_credit: Money,
+    /// The offer price per credit in baht, as display text with three
+    /// decimals.
+    pub price_per_credit_baht: String,
+    /// When the offer stops and the regular price applies again.
+    #[serde(with = "time::serde::rfc3339")]
+    pub ends_at: OffsetDateTime,
 }
 
 /// The package list.
@@ -446,6 +581,13 @@ pub struct Receipt {
     pub receipt_no: String,
     /// The order it is for.
     pub order_id: Uuid,
+    /// The order code (ORD-XXXXX-XXXXX) of this receipt's order, the same as
+    /// [`Order::code`], for referring to the order. The receipt's legal number
+    /// is `receipt_no`; never use this code in its place. Every receipt comes
+    /// from an order and every order has a code, so it should always be set;
+    /// `None` means the order's code could not be read at that moment.
+    #[serde(default)]
+    pub order_code: Option<String>,
     /// When it was issued.
     #[serde(with = "time::serde::rfc3339")]
     pub issued_at: OffsetDateTime,

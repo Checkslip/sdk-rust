@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use checkslip::time::macros::{date, datetime};
 use checkslip::{
-    Client, CreateEndpoint, Error, EventType, ListSlipsParams, LookupRequest, Outcome,
+    Client, CreateEndpoint, Error, EventType, ListSlipsParams, LookupRequest, LotKind, Outcome,
     ReceiverKind, SlipData, ThresholdBasis, UnavailableReason, UpdateEndpoint, UsageInterval,
     UsageParams,
 };
@@ -88,6 +88,13 @@ async fn lookup_qr_sends_auth_body_and_a_generated_key() {
     assert_eq!(slip.amount.satang, 5000);
     assert_eq!(slip.sender.bank.code, "KKP");
     assert_eq!(slip.sender.account.as_deref(), Some("0439"));
+    // The masked number keeps the digits the bank shows in their real places,
+    // so it can be shown without guessing the shape.
+    assert_eq!(slip.sender.account_masked.as_deref(), Some("xxx-x-x0439-x"));
+    assert_eq!(
+        slip.receiver.account_masked.as_deref(),
+        Some("xxx-x-xx968-1")
+    );
     assert_eq!(slip.receiver.kind, ReceiverKind::BankAccount);
     assert_eq!(slip.transferred_at, datetime!(2026-10-29 10:33:30 +07:00));
 
@@ -979,4 +986,122 @@ async fn a_ready_evidence_export_decodes() {
     assert_eq!(manifest.record_count, 1402);
     assert_eq!(manifest.format, "checkslip-audit-export/3");
     assert_eq!(manifest.size_bytes, 884215);
+}
+
+/// The credit lots behind a balance (billing contract 0.72.1): the campaign lot
+/// is charged first because it expires first, and `credits` is their sum.
+#[tokio::test]
+async fn a_balance_carries_its_lots() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/billing/balance"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "account_id": "6f1c2a8e-2b4f-4d6a-9a52-3a1f0c8e9b10",
+            "credits": 1250,
+            "low": false,
+            "threshold": 40,
+            "credits_per_year": 1800,
+            "expires_at": "2027-10-29T00:00:00+07:00",
+            "updated_at": "2026-11-20T09:00:00+07:00",
+            "last_entry_id": null,
+            "next_expires_at": "2027-02-01T00:00:00+07:00",
+            "lots": [
+                {
+                    "id": "0192d4e0-0000-7000-8000-0000000000a1",
+                    "kind": "CAMPAIGN",
+                    "campaign_id": "0192d4e0-0000-7000-8000-0000000000c1",
+                    "campaign_name": { "th": "โปรเปิดตัว", "en": "Launch offer" },
+                    "credits_left": 250,
+                    "granted": 500,
+                    "expires_at": "2027-02-01T00:00:00+07:00",
+                    "usable": true,
+                    "usable_today": 20
+                },
+                {
+                    "id": "0192d4e0-0000-7000-8000-0000000000a2",
+                    "kind": "PAID",
+                    "campaign_id": null,
+                    "campaign_name": null,
+                    "credits_left": 1000,
+                    "granted": null,
+                    "expires_at": "2027-10-29T00:00:00+07:00",
+                    "usable": true,
+                    "usable_today": null
+                }
+            ]
+        })))
+        .mount(&server)
+        .await;
+
+    let bal = no_retry_client(&server)
+        .billing()
+        .balance()
+        .get()
+        .await
+        .unwrap();
+
+    assert_eq!(bal.credits_per_year, Some(1800));
+    assert_eq!(bal.lots.len(), 2);
+    let campaign = &bal.lots[0];
+    assert_eq!(campaign.kind, LotKind::Campaign);
+    assert_eq!(campaign.credits_left, 250);
+    assert_eq!(campaign.granted, Some(500));
+    assert_eq!(campaign.usable_today, Some(20));
+    assert!(campaign.usable);
+    let name = campaign
+        .campaign_name
+        .as_ref()
+        .expect("a campaign lot carries the campaign name");
+    assert_eq!(name.en, "Launch offer");
+    assert_eq!(name.th, "โปรเปิดตัว");
+
+    // The paid lot has no campaign and no daily number, and None is not 0: a
+    // reader can tell "no limit" from "nothing left today".
+    let paid = &bal.lots[1];
+    assert_eq!(paid.kind, LotKind::Paid);
+    assert_eq!(paid.campaign_id, None);
+    assert_eq!(paid.campaign_name, None);
+    assert_eq!(paid.granted, None);
+    assert_eq!(paid.usable_today, None);
+    assert_eq!(bal.credits, campaign.credits_left + paid.credits_left);
+    assert_eq!(bal.next_expires_at, Some(campaign.expires_at));
+}
+
+/// An unknown lot kind keeps the word the server sent, so a reader can still
+/// show the credits and their expiry.
+#[tokio::test]
+async fn an_unknown_lot_kind_is_kept() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/billing/balance"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "account_id": "6f1c2a8e-2b4f-4d6a-9a52-3a1f0c8e9b10",
+            "credits": 5,
+            "low": true,
+            "threshold": 10,
+            "expires_at": null,
+            "updated_at": "2026-11-20T09:00:00+07:00",
+            "lots": [{
+                "id": "0192d4e0-0000-7000-8000-0000000000a3",
+                "kind": "PARTNER_GIFT",
+                "credits_left": 5,
+                "expires_at": "2027-03-01T00:00:00+07:00",
+                "usable": true
+            }]
+        })))
+        .mount(&server)
+        .await;
+
+    let bal = no_retry_client(&server)
+        .billing()
+        .balance()
+        .get()
+        .await
+        .unwrap();
+
+    assert_eq!(
+        bal.lots[0].kind,
+        LotKind::Unknown("PARTNER_GIFT".to_owned())
+    );
+    assert_eq!(bal.lots[0].credits_left, 5);
 }
