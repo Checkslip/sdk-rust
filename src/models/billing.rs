@@ -32,8 +32,12 @@ pub struct Balance {
     pub low: bool,
     /// The low-balance threshold.
     pub threshold: u64,
-    /// How `threshold` was worked out.
-    pub threshold_basis: ThresholdBasis,
+    /// How `threshold` was worked out. Always `None`: the API stopped sending
+    /// this to customers in November 2026, and the published API reference
+    /// does not list this field. There is no replacement field. It stays here
+    /// so code that reads it still compiles.
+    #[serde(default)]
+    pub threshold_basis: Option<ThresholdBasis>,
     /// When the credits expire, if they do.
     #[serde(with = "time::serde::rfc3339::option")]
     pub expires_at: Option<OffsetDateTime>,
