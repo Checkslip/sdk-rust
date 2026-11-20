@@ -137,6 +137,42 @@ match client.slips().lookup(LookupRequest::qr("...")).await {
 
 เวลาติดต่อทีมงาน ให้แนบ `request_id` ไปด้วย
 
+### ยังไม่ได้ผลว่าพบรายการหรือไม่ (503 `UNAVAILABLE`)
+
+ถ้าระบบธนาคารยังไม่ให้คำตอบที่ชี้ชัด การค้นครั้งนั้นจะกลับมาเป็น `Error::Api`
+สถานะ 503 รหัส `UNAVAILABLE` และไม่หักเครดิต `unavailable_reason()` บอกเหตุ
+และคำเดียวกันอยู่ใน `problem.reason`
+
+| เหตุ | หมายความว่า | `Retry-After` |
+|------|-------------|---------------|
+| `UnavailableReason::NotSeen` | ระบบธนาคารไม่แสดงรายการนี้ ณ เวลาที่ถาม รายการที่เพิ่งโอนอาจยังไม่ขึ้น | 60 วินาที |
+| `UnavailableReason::SourceDown` | ยังไม่ได้คำตอบที่ใช้ได้จากระบบธนาคาร | 30 วินาที |
+
+```rust,no_run
+# async fn run(client: checkslip::Client) {
+use checkslip::{LookupRequest, UnavailableReason};
+
+match client.slips().lookup(LookupRequest::qr("...")).await {
+    Ok(check) => println!("{}", check.outcome),
+    Err(e) if e.code() == Some("UNAVAILABLE") => match e.unavailable_reason() {
+        Some(UnavailableReason::NotSeen) => println!("ยังไม่มีรายการให้เห็น ถามใหม่ภายหลัง"),
+        // ไม่มีเหตุ หรือเจอค่าที่รุ่นนี้ยังไม่รู้จัก ก็ทำแบบเดียวกัน
+        _ => println!("ยังไม่ได้คำตอบที่ใช้ได้จากระบบธนาคาร"),
+    },
+    Err(e) => println!("{e}"),
+}
+# }
+```
+
+ถ้าได้ `None` หรือ `UnavailableReason::Unknown` ให้ทำแบบเดียวกับ `SourceDown`
+· `UNAVAILABLE` ที่เกิดจากความผิดพลาดของเราเองจะไม่มีเหตุติดมาด้วย และ API
+เพิ่มเหตุใหม่ที่รุ่นนี้ยังไม่รู้จักได้
+
+ทุกการค้นส่ง `Idempotency-Key` ก่อนที่ error จะมาถึงคุณ client จึงรอตาม
+`Retry-After` และถามซ้ำให้แล้ว (ค่าเริ่มต้น 2 ครั้ง) การค้นที่ได้ `NOT_SEEN`
+จึงใช้เวลากลับมาได้ราวสองนาที ถ้าอยากรอเองให้สร้าง client ด้วย
+`max_retries(0)`
+
 ## การลองซ้ำ
 
 ไลบรารีลองซ้ำให้เอง ค่าเริ่มต้น `max_retries(2)` แปลว่าส่งได้มากที่สุด 3 ครั้ง

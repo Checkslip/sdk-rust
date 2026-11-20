@@ -108,6 +108,38 @@ impl Error {
             _ => None,
         }
     }
+
+    /// Why a lookup has not settled whether a matching transfer exists. Only a
+    /// 503 carries one, and only the `UNAVAILABLE` code: `None` on every other
+    /// error, and on an `UNAVAILABLE` that comes from a failure of ours.
+    ///
+    /// Handle `None`, and a reason this version of the crate does not know,
+    /// like [`UnavailableReason::SourceDown`].
+    pub fn unavailable_reason(&self) -> Option<&UnavailableReason> {
+        match self {
+            Error::Api {
+                status: 503,
+                problem,
+                ..
+            } => problem.reason.as_ref(),
+            _ => None,
+        }
+    }
+}
+
+string_enum! {
+    /// Why a 503 `UNAVAILABLE` lookup has no definite answer.
+    ///
+    /// The `Retry-After` the API sends differs by reason: 60 seconds for
+    /// [`UnavailableReason::NotSeen`], 30 for
+    /// [`UnavailableReason::SourceDown`].
+    pub enum UnavailableReason {
+        /// The banking system does not show this transfer at the time of the
+        /// lookup. One made moments ago may not be there yet.
+        NotSeen = "NOT_SEEN",
+        /// No usable answer from the banking system.
+        SourceDown = "SOURCE_DOWN",
+    }
 }
 
 /// An RFC 9457 problem body as the Checkslip API sends it.
@@ -136,6 +168,13 @@ pub struct Problem {
     /// Field-level errors for validation failures.
     #[serde(default)]
     pub errors: Vec<FieldError>,
+    /// Why this lookup has not settled whether a matching transfer exists;
+    /// sent with `UNAVAILABLE` only. `None` when the API sent no reason, which
+    /// is what an `UNAVAILABLE` from a failure of ours looks like; handle that,
+    /// and a reason this version does not know, like
+    /// [`UnavailableReason::SourceDown`].
+    #[serde(default)]
+    pub reason: Option<UnavailableReason>,
     /// Members this crate has no field for, such as `order_id`.
     #[serde(flatten)]
     pub extra: serde_json::Map<String, serde_json::Value>,

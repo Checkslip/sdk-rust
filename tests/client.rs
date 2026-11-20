@@ -5,7 +5,7 @@ use std::time::Duration;
 use checkslip::time::macros::{date, datetime};
 use checkslip::{
     Client, CreateEndpoint, Error, EventType, ListSlipsParams, LookupRequest, Outcome,
-    ReceiverKind, SlipData, UpdateEndpoint, UsageInterval, UsageParams,
+    ReceiverKind, SlipData, UnavailableReason, UpdateEndpoint, UsageInterval, UsageParams,
 };
 use futures_util::TryStreamExt;
 use serde_json::{json, Value};
@@ -711,4 +711,115 @@ async fn network_errors_retry_on_get_then_surface() {
         .unwrap();
     let err = c.billing().balance().get().await.unwrap_err();
     assert!(matches!(err, Error::Http(_)), "{err:?}");
+}
+
+/// A 503 UNAVAILABLE as the API sends it, with or without a reason
+/// (verify contract 0.80.2). Retry-After is 0 so the test does not sit out
+/// the real 60 seconds.
+fn unavailable(reason: Option<&str>) -> ResponseTemplate {
+    let mut body = json!({
+        "type": "https://checkslip.com/problems/unavailable",
+        "title": "ติดต่อไม่ได้",
+        "status": 503,
+        "code": "UNAVAILABLE",
+        "instance": "/api/slips/lookup",
+    });
+    if let Some(reason) = reason {
+        body["reason"] = json!(reason);
+    }
+    ResponseTemplate::new(503)
+        .insert_header("content-type", "application/problem+json")
+        .insert_header("retry-after", "0")
+        .set_body_json(body)
+}
+
+fn no_retry_client(server: &MockServer) -> Client {
+    Client::builder()
+        .api_key(KEY)
+        .base_url(server.uri())
+        .max_retries(0)
+        .build()
+        .unwrap()
+}
+
+#[tokio::test]
+async fn unavailable_carries_its_reason() {
+    for (sent, want) in [
+        ("NOT_SEEN", UnavailableReason::NotSeen),
+        ("SOURCE_DOWN", UnavailableReason::SourceDown),
+        // A reason added to the API after this version of the crate keeps the
+        // word the server sent, so the caller can log it and fall back.
+        (
+            "BANK_REFUSED_US",
+            UnavailableReason::Unknown("BANK_REFUSED_US".to_owned()),
+        ),
+    ] {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(unavailable(Some(sent)))
+            .mount(&server)
+            .await;
+
+        let err = no_retry_client(&server)
+            .slips()
+            .lookup(LookupRequest::qr(QR))
+            .await
+            .unwrap_err();
+
+        assert_eq!(err.code(), Some("UNAVAILABLE"));
+        assert_eq!(err.unavailable_reason(), Some(&want), "sent {sent}");
+        assert_eq!(want.as_str(), sent);
+        match err {
+            Error::Api { problem, .. } => assert_eq!(problem.reason.as_ref(), Some(&want)),
+            other => panic!("expected Api, got {other:?}"),
+        }
+    }
+}
+
+#[tokio::test]
+async fn unavailable_without_a_reason_reads_as_none() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .respond_with(unavailable(None))
+        .mount(&server)
+        .await;
+
+    let err = no_retry_client(&server)
+        .slips()
+        .lookup(LookupRequest::qr(QR))
+        .await
+        .unwrap_err();
+
+    assert_eq!(err.code(), Some("UNAVAILABLE"));
+    // Our own failure sends no reason: the caller handles it like SOURCE_DOWN.
+    assert_eq!(err.unavailable_reason(), None);
+}
+
+#[tokio::test]
+async fn only_a_503_reports_a_reason() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .respond_with(
+            ResponseTemplate::new(422)
+                .insert_header("content-type", "application/problem+json")
+                .set_body_json(json!({
+                    "type": "https://checkslip.com/problems/invalid-qr",
+                    "title": "QR ไม่ใช่สลิป",
+                    "status": 422,
+                    "code": "INVALID_QR",
+                    "instance": "/api/slips/lookup",
+                    "reason": "NOT_SEEN",
+                })),
+        )
+        .mount(&server)
+        .await;
+
+    let err = no_retry_client(&server)
+        .slips()
+        .lookup(LookupRequest::qr(QR))
+        .await
+        .unwrap_err();
+
+    assert_eq!(err.code(), Some("INVALID_QR"));
+    assert_eq!(err.unavailable_reason(), None);
 }
