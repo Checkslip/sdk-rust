@@ -179,6 +179,43 @@ match client.slips().lookup(LookupRequest::qr("...")).await {
 
 Quote the `request_id` when you contact support.
 
+### No definite answer (503 `UNAVAILABLE`)
+
+A lookup the banking system does not settle comes back as `Error::Api` with
+status 503 and code `UNAVAILABLE`, and uses no credit. `unavailable_reason()`
+says why; the same word is in `problem.reason`.
+
+| Reason | What it means | `Retry-After` |
+|--------|---------------|---------------|
+| `UnavailableReason::NotSeen` | The banking system does not show this transfer at the time of the lookup. One made moments ago may not be there yet. | 60 s |
+| `UnavailableReason::SourceDown` | No usable answer from the banking system. | 30 s |
+
+```rust,no_run
+# async fn run(client: checkslip::Client) {
+use checkslip::{LookupRequest, UnavailableReason};
+
+match client.slips().lookup(LookupRequest::qr("...")).await {
+    Ok(check) => println!("{}", check.outcome),
+    Err(e) if e.code() == Some("UNAVAILABLE") => match e.unavailable_reason() {
+        Some(UnavailableReason::NotSeen) => println!("nothing to show yet; ask again later"),
+        // No reason, or one this version does not know: the same handling.
+        _ => println!("no usable answer from the banking system"),
+    },
+    Err(e) => println!("{e}"),
+}
+# }
+```
+
+Handle `None`, and `UnavailableReason::Unknown`, the way you handle
+`SourceDown`. An `UNAVAILABLE` that comes from a failure of ours carries no
+reason at all, and the API can add reasons this version of the crate does not
+list.
+
+Every lookup sends an `Idempotency-Key`, so the client has already waited out
+`Retry-After` and asked again (twice by default) before you see the error: a
+`NOT_SEEN` lookup can take about two minutes to come back. Build the client
+with `max_retries(0)` to do that waiting yourself.
+
 ## Retries
 
 The client retries by itself. With the default `max_retries(2)` a call is

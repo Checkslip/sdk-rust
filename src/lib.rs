@@ -88,7 +88,7 @@ pub use client::{
     DEFAULT_TIMEOUT,
 };
 pub use dates::day;
-pub use error::{Error, FieldError, Problem, Result};
+pub use error::{Error, FieldError, Problem, Result, UnavailableReason};
 pub use models::*;
 pub use pagination::ItemStream;
 pub use resources::LookupRequest;
