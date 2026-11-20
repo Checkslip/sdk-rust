@@ -78,16 +78,6 @@ pub struct Target {
     pub id: String,
 }
 
-/// A field removed from a record, and why.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[non_exhaustive]
-pub struct Redaction {
-    /// Path of the field.
-    pub path: String,
-    /// Why it was removed.
-    pub reason: String,
-}
-
 /// One entry in the account's audit log.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
@@ -101,9 +91,6 @@ pub struct AuditEvent {
     /// When it happened.
     #[serde(with = "time::serde::rfc3339")]
     pub occurred_at: OffsetDateTime,
-    /// The event that caused this one.
-    #[serde(default)]
-    pub causation_id: Option<Uuid>,
     /// The API request that caused it.
     #[serde(default)]
     pub request_id: Option<Uuid>,
@@ -127,9 +114,6 @@ pub struct AuditEvent {
     /// The event this one undid.
     #[serde(default)]
     pub undo_of_event_id: Option<Uuid>,
-    /// Fields removed from this record.
-    #[serde(default)]
-    pub redactions: Option<Vec<Redaction>>,
 }
 
 /// Filters for [`Audit::events`](crate::resources::Audit::events).
@@ -205,6 +189,8 @@ pub struct ApiRequest {
     pub route: String,
     /// Status it got.
     pub http_status: u16,
+    /// How long this request took, from receiving it to answering it.
+    pub latency_ms: u32,
     /// API key used.
     #[serde(default)]
     pub api_key_id: Option<String>,
@@ -226,9 +212,6 @@ pub struct ApiRequest {
     /// What the request was about.
     #[serde(default)]
     pub fingerprint: Option<Fingerprint>,
-    /// Fields removed from this record.
-    #[serde(default)]
-    pub redactions: Option<Vec<Redaction>>,
 }
 
 /// Filters for [`Audit::requests`](crate::resources::Audit::requests).

@@ -1148,3 +1148,40 @@ async fn a_test_message_carries_no_lookup_id() {
 
     assert_eq!(page.items[0].request_id, None);
 }
+
+/// An API request record as the published reference describes it: latency_ms is
+/// required and this crate had no field for it, so a caller could not read how
+/// long a request took. The record also carries no redactions and an audit
+/// event no causation_id; both left the customer API, and this crate was the
+/// only one of the four still declaring them.
+#[tokio::test]
+async fn an_api_request_record_reads_its_latency() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path(
+            "/api/audit/requests/0192d4e0-7c1a-7b3e-9f00-1a2b3c4d5e6f",
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "request_id": "0192d4e0-7c1a-7b3e-9f00-1a2b3c4d5e6f",
+            "received_at": "2026-11-20T09:00:00+07:00",
+            "channel": "API",
+            "method": "POST",
+            "route": "/api/slips/lookup",
+            "http_status": 200,
+            "latency_ms": 812,
+            "api_key_id": "key_01JC0000000000000000000000",
+            "outcome_code": "FOUND"
+        })))
+        .mount(&server)
+        .await;
+
+    let record = no_retry_client(&server)
+        .audit()
+        .requests()
+        .get(checkslip::uuid::Uuid::parse_str("0192d4e0-7c1a-7b3e-9f00-1a2b3c4d5e6f").unwrap())
+        .await
+        .unwrap();
+
+    assert_eq!(record.latency_ms, 812);
+    assert_eq!(record.http_status, 200);
+}
