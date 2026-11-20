@@ -444,9 +444,15 @@ impl ListDeliveriesParams {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct SlipCheckedData {
-    /// The lookup's ID, the same as in the lookup response.
+    /// The id of this lookup, the same request_id you got when you asked
+    /// for it. Use it with GET /api/slips/{request_id} to read the same
+    /// result. One lookup gives one message per endpoint, so the same
+    /// request_id again is the same message sent again.
     pub request_id: Uuid,
-    /// What the bank said.
+    /// The result of the transfer lookup with the bank, with the same
+    /// values and meanings as outcome in GET /api/slips/{request_id}. This
+    /// message carries the final result of that lookup, and today it is
+    /// never PENDING, which is not in use yet.
     pub outcome: Outcome,
     /// When Checkslip asked the bank.
     #[serde(with = "time::serde::rfc3339")]
