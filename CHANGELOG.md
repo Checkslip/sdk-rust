@@ -4,6 +4,17 @@ All notable changes to this crate are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the crate uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0](https://github.com/Checkslip/sdk-rust/compare/v0.10.0...v0.11.0) (2026-11-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* ApiRequest::redactions, AuditEvent::redactions, AuditEvent::causation_id and the Redaction type are removed, and ApiRequest::latency_ms is new and required. Code that read the removed fields stops compiling; it was reading None every time, because the API has never sent them to a customer.
+
+### Bug Fixes
+
+* drop the fields the API does not send, and read the one it does ([4fbe757](https://github.com/Checkslip/sdk-rust/commit/4fbe757c2e178cd589d1c67814b059c78518747e))
+
 ## [0.10.0](https://github.com/Checkslip/sdk-rust/compare/v0.9.1...v0.10.0) (2026-11-20)
 
 
